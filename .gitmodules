@@ -1,0 +1,8 @@
+[submodule "DXBuildGenerator"]
+	path = DXBuildGenerator
+	url = https://github.com/derjabkin/DXBuildGenerator.git
+	branch = master
+[submodule "Nuspec/DX-Nuspec"]
+	path = Nuspec/DX-Nuspec
+	url = https://github.com/derjabkin/DX-Nuspec.git
+	branch = master
