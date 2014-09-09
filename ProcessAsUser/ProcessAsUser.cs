@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 
 namespace ProcessAsUser{
     internal class ProcessAsUser{
@@ -12,15 +12,28 @@ namespace ProcessAsUser{
         public static extern bool GetExitCodeProcess(IntPtr hProcess, out uint exitCode);
 
         private static void CreateProcess(string childProcName, IntPtr logonUserToken, string arguments){
-            string fileName = Path.Combine(Path.GetDirectoryName(childProcName) + "", "ProcessAsUserWrapper.exe");
-            string args = Path.GetFileName(childProcName) + " " + arguments;
             var userSpecificProcess = new UserSpecificProcess{
-                StartInfo = new ProcessStartInfo(fileName, args){UseShellExecute = false}
+                StartInfo = new ProcessStartInfo(childProcName, arguments) { UseShellExecute = false}
             };
             userSpecificProcess.StartAsUser(logonUserToken);
         }
 
         public static void Launch(string userName, string password, string processPath, string arguments){
+            var windowsIdentity = WindowsIdentity.GetCurrent();
+            Debug.Assert(windowsIdentity != null, "windowsIdentity != null");
+            string name = windowsIdentity.Name;
+            if (name.StartsWith(@"NT AUTHORITY")) {
+                LaunchAsUser(userName,password,processPath,arguments);    
+            }
+            else{
+                var process = new Process {StartInfo = new ProcessStartInfo(processPath, arguments){UseShellExecute = false,CreateNoWindow = true,RedirectStandardOutput = true}};
+                process.Start();
+                Trace.TraceInformation(process.StandardOutput.ReadToEnd());
+                process.WaitForExit();
+            }
+        }
+
+        private static void LaunchAsUser(string userName, string password, string processPath, string arguments){
             RDCClient.SessionInfo sessionInfo = RDCClient.GetSessionInfo(userName, password);
             if (sessionInfo.Info != null){
                 IntPtr userToken = RDCClient.GetUserToken(sessionInfo.Info.Value);
@@ -33,6 +46,7 @@ namespace ProcessAsUser{
             }
             WTSFreeMemory(sessionInfo.IntPtr);
         }
+
 
         #region P/Invoke CreateProcessAsUser
 

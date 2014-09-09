@@ -134,7 +134,10 @@ namespace ProcessAsUser
             this.Controls.Add(this.button1);
             this.Controls.Add(this.rdp);
             this.Name = "Form1";
+            this.ShowInTaskbar = false;
             this.Text = "Form1";
+            this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
+            this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.rdp)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

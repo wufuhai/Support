@@ -12,16 +12,12 @@ namespace ProcessAsUser {
         static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
         const int SW_HIDE = 0;
-
+        [STAThread]
         static void Main(string[] args){
             var handle = GetConsoleWindow();
-
-            // Hide
             ShowWindow(handle, SW_HIDE);
-
             Trace.AutoFlush = true;
             Trace.Listeners.Add(new TextWriterTraceListener("processAsUser.log"));
-            Trace.TraceInformation("Hello");
             if (args.Length!=2)
                 throw new ArgumentException( "Args count=" +args.Length+ "Expected args--> ExePath,ExeArgs");
 
@@ -38,8 +34,7 @@ namespace ProcessAsUser {
                 }
             }
             else
-                Environment.Exit(200);
-            
+                Environment.Exit(200);    
             }
         
         }
