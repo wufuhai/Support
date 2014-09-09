@@ -67,7 +67,7 @@ namespace ProcessAsUser{
             try{
 
                 IntPtr stdinHandle = GetStdHandle(StdInputHandle);
-                CreatePipe(out stdoutReadHandle, out stdoutWriteHandle, false);
+                MyCreatePipe(out stdoutReadHandle, out stdoutWriteHandle, false);
                 IntPtr stderrHandle = GetStdHandle(StdErrorHandle);
 
                 startupInfo.dwFlags = StartfUsestdhandles;
@@ -80,8 +80,6 @@ namespace ProcessAsUser{
                 string workingDirectory = GetWorkingDirectory();
 
                 if (!CreateProcessAsUserW(primayUserToken,null,commandLine,null,null,true,creationFlags,environment,workingDirectory,startupInfo,processInformation)){
-                    string message = "CreateProcessAsUserW error: "+Marshal.GetLastWin32Error();
-                    Trace.TraceInformation(message);
                     throw new Win32Exception();
                 }
                 Trace.TraceInformation("-----Process Created-------");
@@ -89,27 +87,33 @@ namespace ProcessAsUser{
                 Trace.TraceInformation("hprocess=" + processInformation.hProcess);
                 var processById = GetProcessById(processInformation.dwProcessId);
                 processById.WaitForExit();
-
-                
+                Trace.TraceInformation("Process finished");
             }
             catch (Exception e){
                 Trace.TraceError(e.ToString());
-                throw;
             }
             finally{
+
                 if (processInformation.hThread != _invalidHandleValue){
                     CloseHandle(new HandleRef(this, processInformation.hThread));
                 }
+
+
                 CloseHandle(new HandleRef(this, stdoutWriteHandle));
             }
 
+
+            if (processInformation.hProcess == IntPtr.Zero){
+                throw new Exception("failed to create process");
+            }
             Encoding encoding = Encoding.GetEncoding(GetConsoleOutputCP());
-            var fileStream = new FileStream(new SafeFileHandle(stdoutReadHandle, true), FileAccess.Read, 4096, true);
+            var fileStream = new FileStream(new SafeFileHandle(stdoutReadHandle,true), FileAccess.Read,  4096, true);
             var standardOutput = new StreamReader(fileStream, encoding);
             Trace.TraceInformation("----------------------------------stdOutput----------------------------------");
-            string readToEnd = standardOutput.ReadToEnd();
-            Trace.TraceInformation(readToEnd);
+            Trace.TraceInformation(standardOutput.ReadToEnd());
         }
+
+
 
         /// <summary>
         ///     Gets the appropriate commandLine from the process.
@@ -152,7 +156,7 @@ namespace ProcessAsUser{
         /// <param name="parentHandle"></param>
         /// <param name="childHandle"></param>
         /// <param name="parentInputs">Specifies whether the parent will be performing the writes.</param>
-        public static void CreatePipe(out IntPtr parentHandle, out IntPtr childHandle, bool parentInputs){
+        public static void MyCreatePipe(out IntPtr parentHandle, out IntPtr childHandle, bool parentInputs){
             string pipename = @"\\.\pipe\Global\" + Guid.NewGuid();
 
             var attributes2 = new SecurityAttributes{bInheritHandle = false};

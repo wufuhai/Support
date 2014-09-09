@@ -1,8 +1,6 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Windows.Forms;
 
 namespace ProcessAsUser {
     public static class RDCClient {
@@ -166,29 +164,23 @@ namespace ProcessAsUser {
         }
 
         public static bool Connect(string userName, string password){
-            var manualResetEventSlim = new ManualResetEventSlim();
+            var done = new ManualResetEventSlim();
             bool connect = false;
             var processCreationThread = new Thread(() => {
-                Application.Run(new Form1(userName, password));
-                connect = Form1.Connected;
-                manualResetEventSlim.Set();
+                var form = new Form1();
+                connect = form.Connect(userName, password);
+                done.Set();
             });
             processCreationThread.SetApartmentState(ApartmentState.STA);
             processCreationThread.Start();
-            manualResetEventSlim.Wait();
+            done.Wait();
             return connect;
         }
 
-        public static IntPtr GetUserToken(WTSSessionInfo sessionInfo){
+        public static IntPtr GetUserToken(WTSSessionInfo sessionInfo) {
             IntPtr logonUserToken;
-            bool wtsQueryUserToken = WTSQueryUserToken(sessionInfo.SessionID, out logonUserToken);
-            if (!wtsQueryUserToken){
-                int lastWin32Error = Marshal.GetLastWin32Error();
-                throw new Win32Exception("Error " + lastWin32Error + "querying user token");
-            }
+            WTSQueryUserToken(sessionInfo.SessionID, out logonUserToken);
             return logonUserToken;
         }
-    }   
-
-
+    }
 }
