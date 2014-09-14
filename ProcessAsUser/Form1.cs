@@ -16,6 +16,8 @@ namespace ProcessAsUser{
         }
 
         public bool Connect(string userName, string password){
+            rdp.DesktopWidth = 1440;
+            rdp.DesktopHeight = 900;
             rdp.Server = Environment.MachineName;
             rdp.UserName = userName;
             var secured = (IMsTscNonScriptable)rdp.GetOcx();
