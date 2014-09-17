@@ -33,7 +33,7 @@
   <ItemGroup>
     <Reference Include="AForge.Video.FFMPEG, Version=2.2.5.0, Culture=neutral, PublicKeyToken=03563089b1be05dd, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\_third_party_assemblies\AForge.Video.FFMPEG.dll</HintPath>
+      <HintPath>..\..\Support\_third_party_assemblies\AForge.Video.FFMPEG.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -57,7 +57,7 @@
   -->
   <Target Name="AfterBuild">
     <ItemGroup>
-      <FFMPERG Include="..\..\_third_party_assemblies\FFMPEG\*.*">
+      <FFMPERG Include="..\..\Support\_third_party_assemblies\FFMPEG\*.*">
       </FFMPERG>
     </ItemGroup>
     <Message Text="@(FFMPERG)">

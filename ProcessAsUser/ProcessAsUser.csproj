@@ -16,7 +16,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\_third_party_assemblies\</OutputPath>
+    <OutputPath>..\Support\_third_party_assemblies\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -33,10 +33,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AxInterop.MSTSCLib">
-      <HintPath>..\..\_third_party_assemblies\AxInterop.MSTSCLib.dll</HintPath>
+      <HintPath>..\..\Support\_third_party_assemblies\AxInterop.MSTSCLib.dll</HintPath>
     </Reference>
     <Reference Include="Interop.MSTSCLib">
-      <HintPath>..\..\_third_party_assemblies\Interop.MSTSCLib.dll</HintPath>
+      <HintPath>..\..\Support\_third_party_assemblies\Interop.MSTSCLib.dll</HintPath>
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
     <Reference Include="System" />
