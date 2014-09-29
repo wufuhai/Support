@@ -23,7 +23,7 @@ namespace PDBLinker {
                 projectFiles.AddRange(Directory.GetFiles(argument.SourceDir, "*.csproj", SearchOption.AllDirectories));
                 projectFiles.AddRange(Directory.GetFiles(argument.SourceDir, "*.vbproj", SearchOption.AllDirectories));
                 var failedProjects = new List<KeyValuePair<string,string>>();
-                var projects = projectFiles.Select(s => new Project(s)).ToList();
+                var projects = GetProjects(projectFiles);
                 _logger.Info(string.Format("Found '{0}' project(s)", projectFiles.Count));
                 var pdbFiles = Directory.GetFiles(argument.PDBDir,"*.pdb").ToArray();
                 _logger.Info(string.Format("Found '{0}' pdb files", pdbFiles.Length));
@@ -54,6 +54,11 @@ namespace PDBLinker {
             }
             if (Debugger.IsAttached)
                 Console.ReadKey();
+        }
+
+        private static List<Project> GetProjects(IEnumerable<string> projectFiles){
+            var projects = projectFiles.Select(s =>{try{return new Project(s);}catch (Exception){return null;}}).Where(project => project!=null).ToList();
+            return projects;
         }
 
         private static PdbSrcSrvSection CreatePdbSrcSrvSection(Project currentProject, PdbStoreManager pdbStoreManager,

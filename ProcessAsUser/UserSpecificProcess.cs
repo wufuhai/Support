@@ -17,13 +17,6 @@ namespace ProcessAsUser{
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true, ExactSpelling = true)]
         public static extern bool CloseHandle(HandleRef handle);
 
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern bool
-            CreateProcess([MarshalAs(UnmanagedType.LPTStr)] string lpApplicationName, StringBuilder lpCommandLine,
-                SecurityAttributes lpProcessAttributes, SecurityAttributes lpThreadAttributes, bool bInheritHandles,
-                int dwCreationFlags, IntPtr lpEnvironment, [MarshalAs(UnmanagedType.LPTStr)] string lpCurrentDirectory,
-                CreateProcessStartupInfo lpStartupInfo, CreateProcessProcessInformation lpProcessInformation);
-
         [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         public static extern bool CreateProcessAsUserW(IntPtr token,
             [MarshalAs(UnmanagedType.LPTStr)] string lpApplicationName,
@@ -75,6 +68,7 @@ namespace ProcessAsUser{
                 startupInfo.hStdOutput = stdoutWriteHandle;
                 startupInfo.hStdError = stderrHandle;
 
+
                 const int creationFlags = 0;
                 IntPtr environment = IntPtr.Zero;
                 string workingDirectory = GetWorkingDirectory();
@@ -97,8 +91,6 @@ namespace ProcessAsUser{
                 if (processInformation.hThread != _invalidHandleValue){
                     CloseHandle(new HandleRef(this, processInformation.hThread));
                 }
-
-
                 CloseHandle(new HandleRef(this, stdoutWriteHandle));
             }
 

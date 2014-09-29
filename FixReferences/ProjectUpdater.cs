@@ -9,7 +9,7 @@ using System.Xml.Linq;
 namespace FixReferences {
     class ProjectUpdater : Updater {
         private readonly string _version;
-        readonly XNamespace _xNamespace = XNamespace.Get("http://schemas.microsoft.com/developer/msbuild/2003");
+        public static readonly XNamespace XNamespace = XNamespace.Get("http://schemas.microsoft.com/developer/msbuild/2003");
 
         readonly string[] _copyLocalReferences ={
             "Xpand.ExpressApp.FilterDataStore", "Xpand.ExpressApp.FilterDataStore.Win",
@@ -37,6 +37,7 @@ namespace FixReferences {
                 AddRequiredReferences(document, file);
             }
             UpdateReferences(document, directoryName, file);
+            UpdateNugetTargets(document, file);
             UpdateConfig(file);
             if (SyncConfigurations(document))
                 DocumentHelper.Save(document, file);
@@ -51,6 +52,26 @@ namespace FixReferences {
                 File.Delete(combine);
 
             UpdateVs2010Compatibility(document, file);
+        }
+
+        private void UpdateNugetTargets(XDocument document, string file){
+            var nugetTargetsPath = PathToRoot(Path.GetDirectoryName(file)) + @"Support\Build\Nuget.Targets";
+            if (document.Descendants(XNamespace + "Import").All(element => !NugetPathMatch(element, nugetTargetsPath))) {
+                var elements = document.Descendants(XNamespace + "Import").Where(xelement => xelement.Attribute("Project").Value.ToLowerInvariant().EndsWith("nuget.targets")).ToArray();
+                for (int index = elements.Length - 1; index >= 0; index--) {
+                    var xElement = elements[index];
+                    xElement.Remove();
+                }
+                Debug.Assert(document.Root != null, "document.Root != null");
+                var element = new XElement(XNamespace + "Import");
+                element.SetAttributeValue("Project", nugetTargetsPath);
+                document.Root.Add(element);
+                DocumentHelper.Save(document, file);
+            }
+        }
+
+        private static bool NugetPathMatch(XElement element, string nugetTargetsPath){
+            return String.Equals(element.Attribute("Project").Value, nugetTargetsPath, StringComparison.InvariantCultureIgnoreCase);
         }
 
         private bool SyncConfigurations(XDocument document){
@@ -97,7 +118,7 @@ namespace FixReferences {
             if (IsWeb(document, GetOutputType(document))&& !document.Descendants().Any(element =>
                 element.Name.LocalName == "Import" && element.Attribute("Project").Value.StartsWith("$(VSToolsPath)")&&
                 element.Attribute("Condition").Value.StartsWith("'$(VSToolsPath)' != ''"))) {
-                var element = new XElement(_xNamespace+"Import");
+                var element = new XElement(XNamespace+"Import");
                 element.SetAttributeValue("Project",@"$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets");
                 element.SetAttributeValue("Condition", @"'$(VSToolsPath)' != ''");
                 Debug.Assert(document.Root != null, "document.Root != null");
@@ -158,7 +179,7 @@ namespace FixReferences {
             if (referencesItemGroup == null) throw new NullReferenceException("referencesItemGroup");
 
             foreach (string reference in RequiredReferencesThatDoNotExist(document)) {
-                var referenceElement = new XElement(_xNamespace + "Reference");
+                var referenceElement = new XElement(XNamespace + "Reference");
                 referenceElement.Add(new XAttribute("Include", reference));
                 referencesItemGroup.Add(referenceElement);
                 DocumentHelper.Save(document, file);
@@ -226,7 +247,7 @@ namespace FixReferences {
                     UpdateElementValue(reference, "Private", "True", file, document);
 
                 if (reference.Attribute("Include").Value.StartsWith("Xpand.")) {
-                    var path = CalcPathToXpandDll(directoryName) + attribute.Value + ".dll";
+                    var path = PathToRoot(directoryName) + @"Xpand.DLL\" + attribute.Value + ".dll";
                     UpdateElementValue(reference, "HintPath", path, file, document);
                 }
             }
@@ -234,7 +255,7 @@ namespace FixReferences {
         void UpdateElementValue(XElement reference, string name, string value, string file, XDocument document) {
             var element = reference.Nodes().OfType<XElement>().FirstOrDefault(xelement => xelement.Name.LocalName == name);
             if (element == null) {
-                element = new XElement(_xNamespace + name);
+                element = new XElement(XNamespace + name);
                 reference.Add(element);
                 element.Value = value;
                 DocumentHelper.Save(document, file);
@@ -247,13 +268,13 @@ namespace FixReferences {
             return element.Name.LocalName == "Reference" && Regex.IsMatch(element.Attribute("Include").Value, "(Xpand)|(DevExpress)", RegexOptions.Singleline | RegexOptions.IgnoreCase);
         }
 
-        string CalcPathToXpandDll(string project) {
+        string PathToRoot(string project) {
             string path = null;
             while (project != RootDir) {
                 path += @"..\";
                 project = project.Substring(0, project.LastIndexOf(@"\", StringComparison.Ordinal));
             }
-            return path + @"Xpand.DLL\";
+            return path;
         }
     }
 
