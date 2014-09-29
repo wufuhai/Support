@@ -17,7 +17,7 @@ using Microsoft.Win32;
 
 namespace XpandTestExecutor {
     internal class Program {
-        const string UsersDir = "EasyTestUsers";
+        const string EasyTestUsersDir = "EasyTestUsers";
         private static readonly object _locker = new object();
 
         private static void Main(string[] args) {
@@ -58,6 +58,7 @@ namespace XpandTestExecutor {
                 var userNames = (string)registryKey.GetValue("UserName", "");
                 if (!string.IsNullOrEmpty(userNames)) {
                     var userQueue = CreateUserQueue(registryKey, userNames);
+                    CleanupEnviroment(testsQueque);
                     int usersCount = userQueue.Count;
                     do {
                         if (testsQueque.Count > 0) {
@@ -78,8 +79,27 @@ namespace XpandTestExecutor {
                 Environment.Exit(2);
         }
 
-        private static void RunTest(string[] args, Queue<EasyTest> testsQueque, EasyTest easyTest)
-        {
+        private static void CleanupEnviroment(IEnumerable<EasyTest> easyTests) {
+            var processes = Process.GetProcesses().Where(process => process.ProcessName.StartsWith("WebDev.WebServer40")).ToArray();
+            foreach (var source in processes) {
+                source.Kill();
+            }
+
+            foreach (var easyTest in easyTests.GroupBy(test => Path.GetDirectoryName(test.FileName))) {
+                var path = Path.Combine(easyTest.Key, "config.xml");
+                using (var optionsStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    var options = Options.LoadOptions(optionsStream, null, null, easyTest.Key);
+                    foreach (var alias in options.Aliases.Cast<TestAlias>().Where(ContainsAppPath)) {
+                        var appPath = UpdateAppPath(null, alias);
+                        var usersDir = Path.Combine(appPath, EasyTestUsersDir);
+                        if (Directory.Exists(usersDir))
+                            Directory.Delete(usersDir, true);
+                    }
+                }
+            }
+        }
+
+        private static void RunTest(string[] args, Queue<EasyTest> testsQueque, EasyTest easyTest) {
             KillWebDev(easyTest.Users.Last().Name);
             try {
                 bool processAsUser = ProcessAsUser(args[0], easyTest);
@@ -89,10 +109,10 @@ namespace XpandTestExecutor {
             catch (Exception e) {
                 LogErrors(easyTest, e);
             }
-            
+
         }
 
-        public static void KillProccesses(string user,Func<int,bool> match ) {
+        public static void KillProccesses(string user, Func<int, bool> match) {
             var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Process");
             foreach (var managementObject in searcher.Get().Cast<ManagementObject>()) {
                 KillProcess(user, managementObject, match);
@@ -110,8 +130,7 @@ namespace XpandTestExecutor {
                         KillProcessAndChildren(pid);
                 }
             }
-            catch (ManagementException)
-            {
+            catch (ManagementException) {
             }
         }
 
@@ -130,8 +149,7 @@ namespace XpandTestExecutor {
             }
         }
 
-        private static void KillWebDev(string name)
-        {
+        private static void KillWebDev(string name) {
             KillProccesses(name, i => Process.GetProcessById(i).ProcessName.StartsWith("WebDev.WebServer40"));
         }
 
@@ -222,8 +240,8 @@ namespace XpandTestExecutor {
                 CopyXafLogToPath(directoryName);
 
                 var logTests = GetLogTests(easyTest).Tests.Where(test => test.Name.ToLowerInvariant() == (Path.GetFileNameWithoutExtension(easyTest.FileName) + "").ToLowerInvariant()).ToArray();
-                if (logTests.All(test => test.Result=="Passed")){
-                    Console.WriteLine(easyTest.FileName +" passed");
+                if (logTests.All(test => test.Result == "Passed")) {
+                    Console.WriteLine(easyTest.FileName + " passed");
                     return true;
                 }
                 Console.WriteLine(easyTest.FileName + " not passed=" + string.Join(Environment.NewLine, logTests.SelectMany(test => test.Errors.Select(error => error.Message.Text))));
@@ -231,18 +249,15 @@ namespace XpandTestExecutor {
             }
         }
 
-        private static void CopyXafLogToPath(string directoryName)
-        {
+        private static void CopyXafLogToPath(string directoryName) {
             string fileName = Path.Combine(directoryName, "config.xml");
-            using (var optionsStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
+            using (var optionsStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                 Options options = Options.LoadOptions(optionsStream, null, null, directoryName);
-                foreach (var alias in options.Aliases.Cast<TestAlias>().Where(ContainsAppPath))
-                {
+                foreach (var alias in options.Aliases.Cast<TestAlias>().Where(ContainsAppPath)) {
                     var suffix = IsWinAppPath(alias) ? "_win" : "_web";
                     var sourceFileName = Path.Combine(alias.Value, "eXpressAppFramework.log");
                     if (File.Exists(sourceFileName))
-                        File.Copy(sourceFileName,Path.Combine(directoryName, "eXpressAppFramework" + suffix + ".log"), true);
+                        File.Copy(sourceFileName, Path.Combine(directoryName, "eXpressAppFramework" + suffix + ".log"), true);
                 }
             }
         }
@@ -250,7 +265,7 @@ namespace XpandTestExecutor {
         private static LogTests GetLogTests(EasyTest easyTest) {
             var directoryName = Path.GetDirectoryName(easyTest.FileName) + "";
             var fileName = Path.Combine(directoryName, "testslog.xml");
-            using (var optionsStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)){
+            using (var optionsStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                 return LogTests.LoadTestsResults(optionsStream);
             }
         }
@@ -294,7 +309,7 @@ namespace XpandTestExecutor {
         }
 
         private static string UpdateAppPath(string userName, TestAlias alias) {
-            string containerDir = userName == null ? null : UsersDir + @"\";
+            string containerDir = userName == null ? null : EasyTestUsersDir + @"\";
             return IsWinAppPath(alias)
                 ? Regex.Replace(alias.Value, @"(.*\\Bin\\)(.*)", @"$1EasyTest\" + containerDir + userName,
                     RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Multiline)
@@ -307,7 +322,7 @@ namespace XpandTestExecutor {
         }
 
         private static bool ContainsAppPath(TestAlias alias) {
-            return alias.Name.ToLowerInvariant().EndsWith("appbin");
+            return alias.Name.ToLowerInvariant().EndsWith("bin");
         }
 
         private static void UpdatePort(EasyTest easyTest, Options options) {
@@ -325,18 +340,14 @@ namespace XpandTestExecutor {
             }
         }
 
-        private static void UpdateTestFile(EasyTest easyTest)
-        {
+        private static void UpdateTestFile(EasyTest easyTest) {
             var fileToUpdate = GetFileToUpdate(easyTest.FileName);
             UpdateTestFileCore(fileToUpdate, easyTest.Users.Last());
         }
 
-        private static string GetFileToUpdate(string easyTestFileName)
-        {
-            using (var scriptStream = File.OpenRead(easyTestFileName))
-            {
-                using (var streamReader = new StreamReader(scriptStream, System.Text.Encoding.UTF8))
-                {
+        private static string GetFileToUpdate(string easyTestFileName) {
+            using (var scriptStream = File.OpenRead(easyTestFileName)) {
+                using (var streamReader = new StreamReader(scriptStream, System.Text.Encoding.UTF8)) {
                     while (streamReader.Peek() > -1) {
                         string currentLine = streamReader.ReadLine() + "";
                         currentLine = currentLine.TrimEnd();
@@ -372,14 +383,19 @@ namespace XpandTestExecutor {
                 var sourcePath = Path.GetFullPath(UpdateAppPath(null, alias));
                 if (Directory.Exists(sourcePath)) {
                     var destPath = Path.GetFullPath(UpdateAppPath(user.Name, alias));
-                    DirectoryCopy(sourcePath, destPath, true, sourcePath + @"\" + UsersDir);
-                    var keyValuePair = LoadAppConfig(alias, options.Applications);
-                    var document = keyValuePair.Key;
-                    int port = IsWinAppPath(alias) ? easyTest.WinPort : easyTest.WebPort;
-                    UpdatePort(port, document);
-                    UpdateConnectionStrings(user, options, document);
-                    document.Save(keyValuePair.Value);
+                    DirectoryCopy(sourcePath, destPath, true, sourcePath + @"\" + EasyTestUsersDir);
+                    UpdateAppConfig(easyTest, options, alias, user);
                 }
+            }
+        }
+
+        private static void UpdateAppConfig(EasyTest easyTest, Options options, TestAlias alias, User user) {
+            var keyValuePair = LoadAppConfig(alias, options.Applications);
+            if (File.Exists(keyValuePair.Value)) {
+                var document = keyValuePair.Key;
+                UpdatePort(easyTest.WinPort, document);
+                UpdateConnectionStrings(user, options, document);
+                document.Save(keyValuePair.Value);
             }
         }
 
@@ -447,9 +463,12 @@ namespace XpandTestExecutor {
                 configName = fileName + ".config";
             }
             var configPath = Path.Combine(path, configName);
-            using (var streamReader = new StreamReader(configPath)) {
-                return new KeyValuePair<XDocument, string>(XDocument.Load(streamReader), configPath);
+            if (File.Exists(configPath)) {
+                using (var streamReader = new StreamReader(configPath)) {
+                    return new KeyValuePair<XDocument, string>(XDocument.Load(streamReader), configPath);
+                }
             }
+            return new KeyValuePair<XDocument, string>();
         }
 
     }
