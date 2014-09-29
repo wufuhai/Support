@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using CmdLine;
+using CommandLine;
 using log4net;
 using log4net.Appender;
 using log4net.Layout;
@@ -17,41 +17,42 @@ namespace PDBLinker {
 
         public static void Main(string[] args){
             _logger=GetLogger();
-            try {
-                var argument = CommandLine.Parse<Argument>();
-                var projectFiles = new List<string>();
-                projectFiles.AddRange(Directory.GetFiles(argument.SourceDir, "*.csproj", SearchOption.AllDirectories));
-                projectFiles.AddRange(Directory.GetFiles(argument.SourceDir, "*.vbproj", SearchOption.AllDirectories));
-                var failedProjects = new List<KeyValuePair<string,string>>();
-                var projects = GetProjects(projectFiles);
-                _logger.Info(string.Format("Found '{0}' project(s)", projectFiles.Count));
-                var pdbFiles = Directory.GetFiles(argument.PDBDir,"*.pdb").ToArray();
-                _logger.Info(string.Format("Found '{0}' pdb files", pdbFiles.Length));
-                foreach (var pdbFile in pdbFiles){
-                    var currentProject = projects.FirstOrDefault(project => Path.GetFileName(project.GetOutputPdbFile()) == Path.GetFileName(pdbFile));
-                    if (currentProject!=null){
-                        var pdbStoreManager = new PdbStoreManager(argument.DbgToolsPath);
-                        var srcSrvSection = CreatePdbSrcSrvSection(currentProject, pdbStoreManager, pdbFile);
-                        var writeSrcSrv = pdbStoreManager.WriteSrcSrv(pdbFile, srcSrvSection);
-                        var fileName = Path.GetFileNameWithoutExtension(pdbFile);
-                        if (!string.IsNullOrEmpty(writeSrcSrv)){
-                            failedProjects.Add(new KeyValuePair<string,string>(pdbFile,writeSrcSrv));
-                            _logger.Error(fileName+"-->"+writeSrcSrv);
-                        }
-                        else{
-                            _logger.Info(fileName+" indexed successfully!");
-                        }
+            var options = new Options();
+            bool arguments = Parser.Default.ParseArguments(args, options);
+            if (!arguments){
+                string message = options.GetUsage();
+                _logger.Error(message);
+                throw new ArgumentException(message);
+            }
+            var projectFiles = new List<string>();
+            projectFiles.AddRange(Directory.GetFiles(options.SourceDir, "*.csproj", SearchOption.AllDirectories));
+            projectFiles.AddRange(Directory.GetFiles(options.SourceDir, "*.vbproj", SearchOption.AllDirectories));
+            var failedProjects = new List<KeyValuePair<string,string>>();
+            var projects = GetProjects(projectFiles);
+            _logger.Info(string.Format("Found '{0}' project(s)", projectFiles.Count));
+            var pdbFiles = Directory.GetFiles(options.PDBDir, "*.pdb").ToArray();
+            _logger.Info(string.Format("Found '{0}' pdb files", pdbFiles.Length));
+            foreach (var pdbFile in pdbFiles){
+                var currentProject = projects.FirstOrDefault(project => Path.GetFileName(project.GetOutputPdbFile()) == Path.GetFileName(pdbFile));
+                if (currentProject!=null){
+                    var pdbStoreManager = new PdbStoreManager(options.DbgToolsPath);
+                    var srcSrvSection = CreatePdbSrcSrvSection(currentProject, pdbStoreManager, pdbFile);
+                    var writeSrcSrv = pdbStoreManager.WriteSrcSrv(pdbFile, srcSrvSection);
+                    var fileName = Path.GetFileNameWithoutExtension(pdbFile);
+                    if (!string.IsNullOrEmpty(writeSrcSrv)){
+                        failedProjects.Add(new KeyValuePair<string,string>(pdbFile,writeSrcSrv));
+                        _logger.Error(fileName+"-->"+writeSrcSrv);
                     }
                     else{
-                        failedProjects.Add(new KeyValuePair<string, string>(pdbFile,"Project not found"));
-                        _logger.Error(pdbFile +"-->Project not found");
+                        _logger.Info(fileName+" indexed successfully!");
                     }
                 }
+                else{
+                    failedProjects.Add(new KeyValuePair<string, string>(pdbFile,"Project not found"));
+                    _logger.Error(pdbFile +"-->Project not found");
+                }
             }
-            catch (CommandLineException exception) {
-                _logger.Error(exception.ArgumentHelp.Message);
-                _logger.Error(exception.ArgumentHelp.GetHelpText(Console.BufferWidth));
-            }
+            
             if (Debugger.IsAttached)
                 Console.ReadKey();
         }

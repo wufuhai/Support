@@ -18,7 +18,7 @@
       <dependency id="AForge.Imaging" version="1.0.4.0" />
       <dependency id="AForge.Math" version="1.0.4.0" />
       <dependency id="AForge.Video" version="1.0.4.0" />
-      <dependency id="eXpandLib" version="14.1.6.10" />
+      <dependency id="eXpandLib" version="14.1.7.1" />
     </dependencies>
   </metadata>
   <files>

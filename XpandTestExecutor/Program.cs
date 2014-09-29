@@ -20,17 +20,32 @@ namespace XpandTestExecutor {
         const string EasyTestUsersDir = "EasyTestUsers";
         private static readonly object _locker = new object();
 
-        private static void Main(string[] args) {
-            var windowsIdentity = WindowsIdentity.GetCurrent();
-            Debug.Assert(windowsIdentity != null, "windowsIdentity != null");
-            var isSystem = windowsIdentity.IsSystem;
-            var testsQueque = CreateTestsQueque();
-            if (isSystem) {
-                SystemAccountExecute(args, testsQueque);
+        private static void Main(string[] args){
+            Trace.UseGlobalLock = true;
+            Trace.Listeners.Add(new TextWriterTraceListener("XpandTestExecutor.log"));
+            Trace.Listeners.Add(new ConsoleTraceListener());
+            AppDomain currentDomain = AppDomain.CurrentDomain;
+            currentDomain.UnhandledException +=CurrentDomainOnUnhandledException;
+            try{
+                var windowsIdentity = WindowsIdentity.GetCurrent();
+                Debug.Assert(windowsIdentity != null, "windowsIdentity != null");
+                var isSystem = windowsIdentity.IsSystem;
+                var testsQueque = CreateTestsQueque();
+                if (isSystem) {
+                    SystemAccountExecute(args, testsQueque);
+                }
+                else {
+                    NormalAccountExecute(args, testsQueque);
+                }
             }
-            else {
-                NormalAccountExecute(args, testsQueque);
+            catch (Exception e){
+                Trace.TraceError(e.ToString());
+                throw;
             }
+        }
+
+        private static void CurrentDomainOnUnhandledException(object sender, UnhandledExceptionEventArgs unhandledExceptionEventArgs){
+            
         }
 
         private static void NormalAccountExecute(string[] args, Queue<EasyTest> testsQueque) {
@@ -48,7 +63,7 @@ namespace XpandTestExecutor {
                         }
                 };
                 process.Start();
-                Console.WriteLine(process.StandardOutput.ReadToEnd());
+                Trace.TraceInformation(process.StandardOutput.ReadToEnd());
                 process.WaitForExit();
             }
         }
@@ -88,14 +103,19 @@ namespace XpandTestExecutor {
 
             foreach (var easyTest in easyTests.GroupBy(test => Path.GetDirectoryName(test.FileName))) {
                 var path = Path.Combine(easyTest.Key, "config.xml");
-                using (var optionsStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                    var options = Options.LoadOptions(optionsStream, null, null, easyTest.Key);
-                    foreach (var alias in options.Aliases.Cast<TestAlias>().Where(ContainsAppPath)) {
-                        var appPath = UpdateAppPath(null, alias);
-                        var usersDir = Path.Combine(appPath, EasyTestUsersDir);
-                        if (Directory.Exists(usersDir))
-                            Directory.Delete(usersDir, true);
+                try{
+                    using (var optionsStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                        var options = Options.LoadOptions(optionsStream, null, null, easyTest.Key);
+                        foreach (var alias in options.Aliases.Cast<TestAlias>().Where(ContainsAppPath)) {
+                            var appPath = UpdateAppPath(null, alias);
+                            var usersDir = Path.Combine(appPath, EasyTestUsersDir);
+                            if (Directory.Exists(usersDir))
+                                Directory.Delete(usersDir, true);
+                        }
                     }
+                }
+                catch (Exception e){
+                    throw new Exception(easyTest.Key,e);
                 }
             }
         }
@@ -170,7 +190,7 @@ namespace XpandTestExecutor {
                     logTests.Save(Path.Combine(directoryName, "TestsLog.xml"));
                 }
             }
-            Console.WriteLine(e);
+            Trace.TraceError(e.ToString());
         }
 
         private static Queue<EasyTest> CreateTestsQueque() {
@@ -222,7 +242,7 @@ namespace XpandTestExecutor {
             string directoryName = Path.GetDirectoryName(easyTest.FileName) + "";
             lock (_locker) {
                 var user = easyTest.Users.Last();
-                Console.WriteLine(user.Name + " WinPort:" + easyTest.WinPort + " WebPort:" + easyTest.WebPort + " -->" + easyTest.FileName);
+                Trace.TraceInformation(user.Name + " WinPort:" + easyTest.WinPort + " WebPort:" + easyTest.WebPort + " -->" + easyTest.FileName);
                 SetupEnviroment(directoryName, easyTest);
                 var arguments = string.Format("-e TestExecutor.v{0}.exe -u {1} -p {2} -a {3}", version, user.Name,
                     user.Password, Path.GetFileName(easyTest.FileName));
@@ -242,10 +262,10 @@ namespace XpandTestExecutor {
 
                 var logTests = GetLogTests(easyTest).Tests.Where(test => test.Name.ToLowerInvariant() == (Path.GetFileNameWithoutExtension(easyTest.FileName) + "").ToLowerInvariant()).ToArray();
                 if (logTests.All(test => test.Result == "Passed")) {
-                    Console.WriteLine(easyTest.FileName + " passed");
+                    Trace.TraceInformation(easyTest.FileName + " passed");
                     return true;
                 }
-                Console.WriteLine(easyTest.FileName + " not passed=" + string.Join(Environment.NewLine, logTests.SelectMany(test => test.Errors.Select(error => error.Message.Text))));
+                Trace.TraceInformation(easyTest.FileName + " not passed=" + string.Join(Environment.NewLine, logTests.SelectMany(test => test.Errors.Select(error => error.Message.Text))));
                 return false;
             }
         }
@@ -473,45 +493,4 @@ namespace XpandTestExecutor {
         }
 
     }
-
-    public class User {
-
-        public string Name { get; set; }
-        public string Password { get; set; }
-    }
-
-    public class EasyTest {
-        private readonly int _winPort;
-        private readonly int _webPort;
-        private readonly List<User> _users = new List<User>();
-
-        public EasyTest(int winPort, int webPort) {
-            _winPort = winPort;
-            _webPort = webPort;
-        }
-
-        public int WinPort {
-            get { return _winPort; }
-        }
-
-        public List<User> Users {
-            get { return _users; }
-        }
-
-        public int WebPort {
-            get { return _webPort; }
-        }
-
-        public string FileName { get; set; }
-
-        public string Index { get; set; }
-
-
-    }
-
-    public class EasyTestRunner {
-        public User User { get; set; }
-
-    }
-
 }

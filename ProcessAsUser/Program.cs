@@ -10,6 +10,7 @@ namespace ProcessAsUser{
         internal static void Main(string[] args){
             Trace.AutoFlush = true;
             Trace.Listeners.Add(new TextWriterTraceListener("processAsUser.log"));
+            Trace.Listeners.Add(new ConsoleTraceListener());
             var options = new Options();
             bool arguments = Parser.Default.ParseArguments(args, options);
             Trace.TraceInformation("Arguments parsed="+arguments);
