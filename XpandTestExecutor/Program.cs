@@ -36,6 +36,7 @@ namespace XpandTestExecutor {
         private static void NormalAccountExecute(string[] args, Queue<EasyTest> testsQueque) {
             while (testsQueque.Count > 0) {
                 var easyTest = testsQueque.Dequeue();
+                easyTest.Users.Add(new User());
                 var workingDirectory = Path.GetDirectoryName(easyTest.FileName) + "";
                 SetupEnviroment(workingDirectory, easyTest);
                 var process = new Process {
