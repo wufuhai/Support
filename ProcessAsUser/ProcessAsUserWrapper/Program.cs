@@ -17,12 +17,16 @@ namespace ProcessAsUserWrapper {
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main(string[] args) {
+        static void Main(string[] args){
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             var mainForm = new Form1();
-            mainForm.Load+= (sender, eventArgs) =>{
-                var processStartInfo = new ProcessStartInfo(args[0], args.Length == 2 ? args[1] : null) {UseShellExecute=false, RedirectStandardOutput = true,CreateNoWindow = true};
+            mainForm.Load += (sender, eventArgs) =>{
+                var processStartInfo = new ProcessStartInfo(args[0], args.Length == 2 ? args[1] : null){
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                };
                 var process = Process.Start(processStartInfo);
                 var handle = GetConsoleWindow();
                 ShowWindow(handle, SW_HIDE);

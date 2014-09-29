@@ -1,48 +1,38 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
-using Microsoft.Win32;
+using System.Security.Principal;
+using System.Windows.Forms;
+using CommandLine;
 
-namespace ProcessAsUser {
-    class Program {
-        [DllImport("kernel32.dll")]
-        static extern IntPtr GetConsoleWindow();
-
-        [DllImport("user32.dll")]
-        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-        const int SW_HIDE = 0;
-
-        static void Main(string[] args){
-            var handle = GetConsoleWindow();
-
-            // Hide
-            ShowWindow(handle, SW_HIDE);
-
+namespace ProcessAsUser{
+    internal class Program{
+        [STAThread]
+        internal static void Main(string[] args){
             Trace.AutoFlush = true;
             Trace.Listeners.Add(new TextWriterTraceListener("processAsUser.log"));
-            Trace.TraceInformation("Hello");
-            if (args.Length!=2)
-                throw new ArgumentException( "Args count=" +args.Length+ "Expected args--> ExePath,ExeArgs");
-
-            var registryKey = Registry.LocalMachine.CreateSubKey(@"Software\Xpand\ProcessAsUser");
-            if (registryKey != null){
-                var userName =(string) registryKey.GetValue("UserName","");
-                Trace.TraceInformation("Username="+userName);
-                var password = (string) registryKey.GetValue("Password");
-                if (!string.IsNullOrEmpty(userName)&&!string.IsNullOrEmpty(password)){
-                    ProcessAsUser.Launch(userName,password,args[0],args[1]);
+            var options = new Options();
+            bool arguments = Parser.Default.ParseArguments(args, options);
+            Trace.TraceInformation("Arguments parsed="+arguments);
+            if (arguments){
+                WindowsIdentity windowsIdentity = WindowsIdentity.GetCurrent();
+                Debug.Assert(windowsIdentity != null, "windowsIdentity != null");
+                var processAsUser = new ProcessAsUser(options);
+                if (windowsIdentity.IsSystem){
+                    try{
+                        Application.Run(new RDClient(processAsUser));
+                    }
+                    catch (ObjectDisposedException){
+                    }
                 }
                 else{
-                    Environment.Exit(200);
+                    throw new NotImplementedException();
                 }
             }
-            else
-                Environment.Exit(200);
-            
+            else{
+                string message = options.GetUsage();
+                Trace.TraceError(message);
+                throw new ArgumentException(message);
             }
-        
         }
     }
-
-
+}

@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>eXpandEasyTest</id>
+    <version>14.1.6.10</version>
+    <title>DevExpress eXpandFramework EasyTest library</title>
+    <authors>eXpandFramework</authors>
+    <owners>eXpandFramework</owners>
+    <iconUrl>http://expandframework.com/images/site/logo.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Core EasyTest Library for functional testing using XAF EasyTest</description>
+    <summary>EasyTest library / eXpandFramework</summary>
+    <copyright>eXpandFramework.com</copyright>
+    <tags>DevExpress, eXpand, XAF, eXpressApp</tags>
+    <projectUrl>http://www.expandframework.com</projectUrl>
+    <dependencies>
+      <dependency id="AForge" version="1.0.4.0" />
+      <dependency id="AForge.Imaging" version="1.0.4.0" />
+      <dependency id="AForge.Math" version="1.0.4.0" />
+      <dependency id="AForge.Video" version="1.0.4.0" />
+      <dependency id="eXpandLib" version="14.1.6.10" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="\Build\Temp\Xpand.EasyTest.dll" target="lib\net40\Xpand.EasyTest.dll" />
+    <file src="\Build\Temp\Xpand.EasyTest.pdb" target="lib\net40\Xpand.EasyTest.pdb" />
+    <file src="\Build\Temp\WindowsInput.dll" target="lib\net40\WindowsInput.dll" />
+  </files>
+</package>

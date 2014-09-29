@@ -4,6 +4,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Linq;
 
+
 namespace FixReferences {
     class Program {
         static readonly HashSet<string> _excludedDirs=new HashSet<string>{"DXBuildGenerator"}; 
@@ -16,22 +17,24 @@ namespace FixReferences {
             DeleteBackupFolders(rootDir);
             var version = GetVersion(rootDir);
             var documentHelper = new DocumentHelper();
-            var files = Directory.GetFiles(rootDir, "*.csproj", SearchOption.AllDirectories);
-            foreach (var file in files) {
-                if (!_excludedDirs.Any(s => file.IndexOf(s, StringComparison.Ordinal)>-1)) {
-                    var projectReferencesUpdater = new ProjectUpdater(documentHelper,rootDir,version);
-                    projectReferencesUpdater.Update(file);
-                }
-            }
-
-            
-            files = Directory.GetFiles(Path.Combine(rootDir, @"Support\Nuspec"), "*.nuspec");
-            foreach (var file in files) {
-                var projectReferencesUpdater = new NugetUpdater(documentHelper, rootDir, version);
+            var projectFiles = GetProjects(rootDir).ToArray();
+            foreach (var file in projectFiles) {
+                var projectReferencesUpdater = new ProjectUpdater(documentHelper,rootDir,version);
                 projectReferencesUpdater.Update(file);
             }
 
+            
+            var nuspecs = Directory.GetFiles(Path.Combine(rootDir, @"Support\Nuspec"), "*.nuspec");
+            foreach (var file in nuspecs) {
+                var projectReferencesUpdater = new NugetUpdater(documentHelper, rootDir, version, projectFiles,nuspecs);
+                projectReferencesUpdater.Update(file);
+            }
             return true;
+        }
+
+        private static IEnumerable<string> GetProjects(string rootDir){
+            var files = Directory.GetFiles(rootDir, "*.csproj", SearchOption.AllDirectories);
+            return files.Where(s => !_excludedDirs.Any(dir => s.IndexOf(dir, StringComparison.Ordinal) > -1));
         }
 
         private static void DeleteBackupFolders(string rootDir){
