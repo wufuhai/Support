@@ -20,12 +20,12 @@ namespace XpandTestExecutor {
         const string EasyTestUsersDir = "EasyTestUsers";
         private static readonly object _locker = new object();
 
-        private static void Main(string[] args){
+        private static void Main(string[] args) {
             Trace.UseGlobalLock = true;
             Trace.Listeners.Add(new TextWriterTraceListener("XpandTestExecutor.log"));
             Trace.Listeners.Add(new ConsoleTraceListener());
             AppDomain currentDomain = AppDomain.CurrentDomain;
-            currentDomain.UnhandledException +=CurrentDomainOnUnhandledException;
+            currentDomain.UnhandledException += CurrentDomainOnUnhandledException;
             try{
                 var windowsIdentity = WindowsIdentity.GetCurrent();
                 Debug.Assert(windowsIdentity != null, "windowsIdentity != null");
@@ -44,8 +44,8 @@ namespace XpandTestExecutor {
             }
         }
 
-        private static void CurrentDomainOnUnhandledException(object sender, UnhandledExceptionEventArgs unhandledExceptionEventArgs){
-            
+        private static void CurrentDomainOnUnhandledException(object sender, UnhandledExceptionEventArgs unhandledExceptionEventArgs) {
+            Trace.TraceError(unhandledExceptionEventArgs.ExceptionObject.ToString());
         }
 
         private static void NormalAccountExecute(string[] args, Queue<EasyTest> testsQueque) {
@@ -103,7 +103,7 @@ namespace XpandTestExecutor {
 
             foreach (var easyTest in easyTests.GroupBy(test => Path.GetDirectoryName(test.FileName))) {
                 var path = Path.Combine(easyTest.Key, "config.xml");
-                try{
+                try {
                     using (var optionsStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                         var options = Options.LoadOptions(optionsStream, null, null, easyTest.Key);
                         foreach (var alias in options.Aliases.Cast<TestAlias>().Where(ContainsAppPath)) {
@@ -114,8 +114,8 @@ namespace XpandTestExecutor {
                         }
                     }
                 }
-                catch (Exception e){
-                    throw new Exception(easyTest.Key,e);
+                catch (Exception e) {
+                    throw new Exception(easyTest.Key, e);
                 }
             }
         }
@@ -425,7 +425,7 @@ namespace XpandTestExecutor {
                 var indexOf = testDatabase.DBName.IndexOf("_", StringComparison.Ordinal);
                 var database = indexOf > -1 ? testDatabase.DBName.Substring(0, indexOf) : testDatabase.DBName;
                 var connectionStrings = document.Descendants("connectionStrings").SelectMany(element => element.Descendants())
-                    .Where(element => element.Attribute("connectionString").Value.Contains(database)).Select(element
+                    .Where(element => element.Attribute("connectionString").Value.ToLowerInvariant().Contains(database.ToLowerInvariant())).Select(element
                         => element.Attribute("connectionString"));
                 foreach (var connectionString in connectionStrings) {
                     connectionString.Value = Regex.Replace(connectionString.Value,
