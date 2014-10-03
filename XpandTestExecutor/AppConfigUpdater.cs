@@ -30,8 +30,7 @@ namespace XpandTestExecutor{
 
         private static void UpdateConnectionStrings(User user, Options options, XDocument document) {
             foreach (TestDatabase testDatabase in options.TestDatabases) {
-                var indexOf = testDatabase.DBName.IndexOf("_", StringComparison.Ordinal);
-                var database = indexOf > -1 ? testDatabase.DBName.Substring(0, indexOf) : testDatabase.DBName;
+                var database = testDatabase.DefaultDBName();
                 var connectionStrings = document.Descendants("connectionStrings").SelectMany(element => element.Descendants())
                     .Where(element => element.Attribute("connectionString").Value.ToLowerInvariant().Contains(database.ToLowerInvariant())).Select(element
                         => element.Attribute("connectionString"));

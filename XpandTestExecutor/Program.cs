@@ -20,11 +20,11 @@ namespace XpandTestExecutor {
             Trace.Listeners.Add(new ConsoleTraceListener());
             AppDomain currentDomain = AppDomain.CurrentDomain;
             currentDomain.UnhandledException += CurrentDomainOnUnhandledException;
-            try{
+            try {
                 var windowsIdentity = WindowsIdentity.GetCurrent();
                 Debug.Assert(windowsIdentity != null, "windowsIdentity != null");
                 var isSystem = windowsIdentity.IsSystem;
-                var testsQueque = CreateTestsQueque();
+                var testsQueque = CreateTestsQueque(isSystem);
                 if (isSystem) {
                     SystemAccountExecute(args, testsQueque);
                 }
@@ -32,7 +32,7 @@ namespace XpandTestExecutor {
                     NormalAccountExecute(args, testsQueque);
                 }
             }
-            catch (Exception e){
+            catch (Exception e) {
                 Trace.TraceError(e.ToString());
                 throw;
             }
@@ -121,13 +121,19 @@ namespace XpandTestExecutor {
             Trace.TraceError(e.ToString());
         }
 
-        private static Queue<EasyTest> CreateTestsQueque() {
+        private static Queue<EasyTest> CreateTestsQueque(bool useCustomPort) {
             string[] tests = File.ReadAllLines("easytests.txt");
             var testsQueque = new Queue<EasyTest>();
             CheckConfigSharing(tests);
             for (int index = 0; index < tests.Length; index++) {
                 string test = tests[index];
-                testsQueque.Enqueue(new EasyTest(4200 + index, 4030 + index) { FileName = test });
+                int winPort = 4100;
+                int webPort = 4030;
+                if (useCustomPort) {
+                    winPort = 4200 + index;
+                    webPort = 4030 + index;
+                }
+                testsQueque.Enqueue(new EasyTest(winPort, webPort) { FileName = test });
             }
             return testsQueque;
         }
@@ -223,8 +229,8 @@ namespace XpandTestExecutor {
             var user = easyTest.Users.Last();
             string fileName = Path.Combine(configPath, "config.xml");
             TestUpdater.UpdateTestConfig(easyTest, fileName);
-            if (user.Name != null){
-                AppConfigUpdater.Update(fileName,configPath,easyTest);
+            if (user.Name != null) {
+                AppConfigUpdater.Update(fileName, configPath, easyTest);
             }
             TestUpdater.UpdateTestFile(easyTest);
         }

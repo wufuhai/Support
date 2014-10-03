@@ -55,7 +55,7 @@ namespace FixReferences {
         }
 
         private void UpdateNugetTargets(XDocument document, string file){
-            var nugetTargetsPath = PathToRoot(Path.GetDirectoryName(file)) + @"Support\Build\Nuget.Targets";
+            var nugetTargetsPath = Extensions.PathToRoot(Path.GetDirectoryName(file),RootDir) + @"Support\Build\Nuget.Targets";
             if (document.Descendants(XNamespace + "Import").All(element => !NugetPathMatch(element, nugetTargetsPath))) {
                 var elements = document.Descendants(XNamespace + "Import").Where(xelement => xelement.Attribute("Project").Value.ToLowerInvariant().EndsWith("nuget.targets")).ToArray();
                 for (int index = elements.Length - 1; index >= 0; index--) {
@@ -185,6 +185,7 @@ namespace FixReferences {
                 DocumentHelper.Save(document, file);
             }
         }
+
         IEnumerable<string> RequiredReferencesThatDoNotExist(XDocument document) {
             return _requiredApplicationProjectReferences.Where(reference => !AlreadyReferenced(document, reference.Value) &&
                 HasReferenceRequirement(document, reference.Key)).Select(reference => reference.Value);
@@ -197,6 +198,7 @@ namespace FixReferences {
         bool HasReferenceRequirement(XDocument document, string reference) {
             return HasReferenceRequirementInProject(document, reference) || HasReferenceRequirementInReferenceProjects(document, reference);
         }
+
         bool HasReferenceRequirementInReferenceProjects(XDocument document, string reference) {
             var documents = document.Descendants().Where(element => element.Name.LocalName == "ProjectReference").Select(element
                 => DocumentHelper.GetXDocument(Path.GetFullPath(element.Attribute("Include").Value)));
@@ -247,11 +249,12 @@ namespace FixReferences {
                     UpdateElementValue(reference, "Private", "True", file, document);
 
                 if (reference.Attribute("Include").Value.StartsWith("Xpand.")) {
-                    var path = PathToRoot(directoryName) + @"Xpand.DLL\" + attribute.Value + ".dll";
+                    var path = Extensions.PathToRoot(directoryName,RootDir) + @"Xpand.DLL\" + attribute.Value + ".dll";
                     UpdateElementValue(reference, "HintPath", path, file, document);
                 }
             }
         }
+
         void UpdateElementValue(XElement reference, string name, string value, string file, XDocument document) {
             var element = reference.Nodes().OfType<XElement>().FirstOrDefault(xelement => xelement.Name.LocalName == name);
             if (element == null) {
@@ -264,18 +267,9 @@ namespace FixReferences {
                 DocumentHelper.Save(document, file);
             }
         }
+
         bool IsXpandOrDXElement(XElement element) {
             return element.Name.LocalName == "Reference" && Regex.IsMatch(element.Attribute("Include").Value, "(Xpand)|(DevExpress)", RegexOptions.Singleline | RegexOptions.IgnoreCase);
         }
-
-        string PathToRoot(string project) {
-            string path = null;
-            while (project != RootDir) {
-                path += @"..\";
-                project = project.Substring(0, project.LastIndexOf(@"\", StringComparison.Ordinal));
-            }
-            return path;
-        }
     }
-
 }

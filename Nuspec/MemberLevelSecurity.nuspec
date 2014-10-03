@@ -14,8 +14,8 @@
     <tags>DevExpress, eXpand, XAF, eXpressApp</tags>
     <projectUrl>http://www.expandframework.com/#memberlevelsecuirty</projectUrl>
     <dependencies>
-      <dependency id="eXpandLib" version="14.1.7.4" />
-      <dependency id="eXpandSecurity" version="14.1.7.4" />
+      <dependency id="eXpandLib" version="14.1.7.5" />
+      <dependency id="eXpandSecurity" version="14.1.7.5" />
     </dependencies>
   </metadata>
   <files>

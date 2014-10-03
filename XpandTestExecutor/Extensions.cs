@@ -3,6 +3,11 @@ using DevExpress.EasyTest.Framework;
 
 namespace XpandTestExecutor {
     public static class Extensions {
+        public static string DefaultDBName(this TestDatabase testDatabase)
+        {
+            return Regex.Replace(testDatabase.DBName, "([^_]*)(.*)", "$1", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+        }
+
         public static bool IsWinAppPath(this TestAlias alias) {
             return alias.Name.ToLowerInvariant().StartsWith("win");
         }

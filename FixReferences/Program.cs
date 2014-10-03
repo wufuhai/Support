@@ -3,14 +3,26 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Linq;
+using CommandLine;
 
 
 namespace FixReferences {
     class Program {
-        static readonly HashSet<string> _excludedDirs=new HashSet<string>{"DXBuildGenerator"}; 
-        static void Main() {
+        static readonly HashSet<string> _excludedDirs=new HashSet<string>{"DXBuildGenerator"};
+        private static Options _options;
+
+        static void Main(string[] args) {
             Environment.CurrentDirectory = AppDomain.CurrentDomain.SetupInformation.ApplicationBase;
-            Execute(Path.GetFullPath(@"..\..\..\.."));
+            var rootDir = Path.GetFullPath(@"..\..\..\..");
+            _options = new Options();
+            bool arguments = Parser.Default.ParseArguments(args, _options);
+            if (arguments){
+                Execute(rootDir);
+            }
+        }
+
+        public static Options Options{
+            get { return _options; }
         }
 
         public static bool Execute(string rootDir){
@@ -23,8 +35,7 @@ namespace FixReferences {
                 projectReferencesUpdater.Update(file);
             }
 
-            
-            var nuspecs = Directory.GetFiles(Path.Combine(rootDir, @"Support\Nuspec"), "*.nuspec");
+            var nuspecs = Directory.GetFiles(Path.Combine(rootDir, @"Support\Nuspec"), "lib.nuspec");
             foreach (var file in nuspecs) {
                 var projectReferencesUpdater = new NugetUpdater(documentHelper, rootDir, version, projectFiles,nuspecs);
                 projectReferencesUpdater.Update(file);

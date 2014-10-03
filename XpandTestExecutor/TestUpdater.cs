@@ -23,7 +23,7 @@ namespace XpandTestExecutor{
         private static void UpdateDataBases(User user, Options options) {
             foreach (var testDatabase in options.TestDatabases.Cast<TestDatabase>()) {
                 var suffix = user.Name != null ? "_" + user.Name : null;
-                testDatabase.DBName = Regex.Replace(testDatabase.DBName, "([^_]*)(.*)", "$1", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Multiline) + suffix;
+                testDatabase.DBName = testDatabase.DefaultDBName() + suffix;
             }
         }
 
@@ -69,8 +69,13 @@ namespace XpandTestExecutor{
 
         private static void UpdateTestFileCore(string fileName, User user) {
             var allText = File.ReadAllText(fileName);
-            var suffix = user.Name != null ? "_" + user.Name : null;
-            allText = Regex.Replace(allText, @"(#DropDB [^_\s]*)([^\s]*)", "$1" + suffix, RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+            var xmlSerializer = new XmlSerializer(typeof(Options));
+            var stringReader = new StringReader(File.ReadAllText(Path.Combine(Path.GetDirectoryName(fileName)+"","config.xml")));
+            var options = (Options)xmlSerializer.Deserialize(stringReader);
+            foreach (var testDatabase in options.TestDatabases.Cast<TestDatabase>()){
+                var suffix = user.Name != null ? "_" + user.Name : null;
+                allText = Regex.Replace(allText, @"(" +testDatabase.DefaultDBName()+ @")(_[^\s]*)?", "$1"+suffix, RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Multiline);    
+            }
             File.WriteAllText(fileName, allText);
         }
 

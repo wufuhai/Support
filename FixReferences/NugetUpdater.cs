@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using MoreLinq;
 
 namespace FixReferences {
     class NugetUpdater:Updater {
         readonly string _version;
         private readonly string[] _projects;
         private readonly string[] _nuspecs;
-        internal readonly XNamespace XNamespace = XNamespace.Get("http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd");
+        internal static readonly XNamespace XNamespace = XNamespace.Get("http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd");
 
         public NugetUpdater(IDocumentHelper documentHelper, string rootDir, string version, string[] projects, string[] nuspecs)
             : base(documentHelper, rootDir){
@@ -20,15 +21,15 @@ namespace FixReferences {
             _nuspecs = nuspecs;
         }
 
-        private IEnumerable<string> GetProjects(string file) {
+        private static IEnumerable<string> GetProjects(string file,string[] projects) {
             var nuspecFileNames = GetNuspecFiles(file);
-            var projects = _projects.Where(s => nuspecFileNames.Contains(AdjustName((Path.GetFileNameWithoutExtension(s))))).ToArray();
+            projects = projects.Where(s => nuspecFileNames.Contains(AdjustName((Path.GetFileNameWithoutExtension(s))))).ToArray();
             if (!projects.Any())
                 throw new NotImplementedException(file);
             return projects;
         }
 
-        private HashSet<string> GetNuspecFiles(string file){
+        private static HashSet<string> GetNuspecFiles(string file){
             var hashSet = new HashSet<string>();
             var nuspecFileName = (Path.GetFileNameWithoutExtension(file) + "").ToLowerInvariant();
             if (nuspecFileName.StartsWith("system"))
@@ -45,33 +46,34 @@ namespace FixReferences {
             return hashSet;
         }
 
-        private string AdjustName(string name){
+        private static string AdjustName(string name){
             return name.Replace("Xpand.ExpressApp.", "").Replace("Xpand.ExpressApp", "").Replace("Xpand.", "").ToLowerInvariant();
         }
 
         public override void Update(string file) {
             var document = DocumentHelper.GetXDocument(file);
-
-            var projects = GetProjects(file).ToArray();
+            var projects = GetProjects(file,_projects).ToArray();
+            var isLibSpec = (Path.GetFileNameWithoutExtension(file)+"").ToLowerInvariant() == "lib";
+            if (isLibSpec){
+                projects = projects.Where(s => !s.Contains("BaseImpl")).ToArray();
+            }
             var allReferences = GetReferences(projects).ToArray();
             var dependencies = GetDependencies(allReferences).ToArray();
             UpdateDependencies(document,dependencies);
             UpdateFiles(document, allReferences,dependencies.Select(pair => pair.Key));
-
-//            var versionElement = document.Descendants().First(element => element.Name.LocalName == "version");
-//            versionElement.Value = _version;
-//            var dependenciesElement = document.Descendants().FirstOrDefault(element => element.Name.LocalName.ToLower() == "dependencies");
-//            if (dependenciesElement != null)
-//                foreach (var element in dependenciesElement.Elements()) {
-//                    element.SetAttributeValue("version",_version);
-//                }
+            if (isLibSpec){
+                var filesElement = document.Descendants(XNamespace + "files").First();
+                filesElement.Add(NewFileElement("Xpand.Persistent.BaseImpl"));
+                filesElement.Add(NewFileElement("Xpand.Persistent.BaseImpl", ".pdb"));
+            }
             DocumentHelper.Save(document, file);
         }
 
         private void UpdateFiles(XDocument document, KeyValuePair<string, IEnumerable<XElement>>[] allReferences, IEnumerable<XElement> dependencies){
             var filesElement = document.Descendants(XNamespace + "files").First();
-            for (int index = filesElement.DescendantNodes().ToArray().Length - 1; index >= 0; index--) {
-                var descendantNode = filesElement.DescendantNodes().ToArray()[index];
+            var descendantNodes = filesElement.DescendantNodes().ToArray();
+            for (int index = descendantNodes.ToArray().Length - 1; index >= 0; index--) {
+                var descendantNode = descendantNodes.ToArray()[index];
                 descendantNode.Remove();
             }
             CreateMainFiles(allReferences, filesElement);
@@ -79,15 +81,16 @@ namespace FixReferences {
         }
 
         private void CreateReferenceFiles(IEnumerable<KeyValuePair<string, IEnumerable<XElement>>> allReferences, IEnumerable<XElement> dependencies, XElement filesElement){
-            var elements = allReferences.SelectMany(pair => pair.Value).Except(dependencies);
+            var xElements = allReferences.SelectMany(pair => pair.Value).DistinctBy(element => element.Attribute("Include").Value);
+            var elements = xElements.Except(dependencies);
             foreach (var assemblyName in elements.Select(GetAssemblyName)){
                 filesElement.Add(NewFileElement(assemblyName));
             }
         }
 
         private void CreateMainFiles(IEnumerable<KeyValuePair<string, IEnumerable<XElement>>> allReferences, XElement filesElement){
-            foreach (var xDocument in allReferences.OrderBy(pair => Path.GetFileNameWithoutExtension(pair.Key))
-                        .Select(pair => XDocument.Load(pair.Key))){
+            var keyValuePairs = allReferences.OrderBy(pair => Path.GetFileNameWithoutExtension(pair.Key)).DistinctBy(pair => pair.Key);
+            foreach (var xDocument in keyValuePairs.Select(pair => XDocument.Load(pair.Key))){
                 var assemblyName = xDocument.Descendants(ProjectUpdater.XNamespace + "AssemblyName").First().Value;
                 filesElement.Add(NewFileElement(assemblyName));
                 filesElement.Add(NewFileElement(assemblyName, ".pdb"));
@@ -105,7 +108,7 @@ namespace FixReferences {
             var metadataElement = document.Descendants(XNamespace+"metadata").First();
             metadataElement.Descendants(XNamespace+"dependencies").Remove();
             var dependenciesElement = new XElement(XNamespace + "dependencies");
-            var packages = elements.Select(pair => new { Name = GetAssemblyName(pair.Key), Version = pair.Value }).Select(arg => new { Id = PackageId(arg.Name),arg.Version }).OrderBy(arg => arg.Id).GroupBy(arg => arg.Id).Select(grouping => grouping.First());
+            var packages = elements.Select(pair => new { Name = GetAssemblyName(pair.Key), Version = pair.Value }).Select(arg => new { Id = GetXpandPackageId(arg.Name),arg.Version }).OrderBy(arg => arg.Id).GroupBy(arg => arg.Id).Select(grouping => grouping.First());
             foreach (var package in packages) {
                 var dependencyElement = new XElement(XNamespace + "dependency");
                 dependencyElement.SetAttributeValue("id",package.Id);
@@ -115,7 +118,7 @@ namespace FixReferences {
             metadataElement.Add(dependenciesElement);
         }
 
-        private string PackageId(string assemblyName){
+        private string GetXpandPackageId(string assemblyName){
             if (assemblyName.StartsWith("Xpand")){
                 var adjustName = AdjustName(assemblyName).ToLowerInvariant();
                 var nuspec = FindNuspec(adjustName);
@@ -139,7 +142,6 @@ namespace FixReferences {
             return _nuspecs.FirstOrDefault(s => adjustName == (Path.GetFileNameWithoutExtension(s)+"").ToLowerInvariant());
         }
 
-
         private IEnumerable<KeyValuePair<XElement,string>> GetDependencies(IEnumerable<KeyValuePair<string, IEnumerable<XElement>>> references) {
             var elements = new List<KeyValuePair<XElement, string>>();
             foreach (var reference in references){
@@ -148,8 +150,9 @@ namespace FixReferences {
                     var assemblyName = GetAssemblyName(element).ToLowerInvariant();
                     var version = _version;
                     if(!assemblyName.StartsWith("xpand")) {
+                        var packageId = GetPackageId(element)??assemblyName;
                         var packagesConfig = (File.Exists(path) ? File.ReadAllText(path) : "").ToLowerInvariant();
-                        var regex = new Regex("<package id=\"" +assemblyName+ "\" .*version=\"([^\"]*)", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+                        var regex = new Regex("<package id=\"" + packageId + "\" .*version=\"([^\"]*)", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Multiline);
                         var match = regex.Match(packagesConfig);
                         if (match.Success){
                             version = match.Groups[1].Value;
@@ -161,7 +164,14 @@ namespace FixReferences {
                     elements.Add(new KeyValuePair<XElement, string>(element, version));
                 }
             }
-            return elements;
+            return elements.DistinctBy(pair => pair.Key.Attribute("Include").Value);
+        }
+
+        private string GetPackageId(XElement element){
+            var xElement = element.Descendants(ProjectUpdater.XNamespace+"HintPath").First();
+            var regex = new Regex(@"Support\\_third_party_assemblies\\Packages\\([^.]*)", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+            var match = regex.Match(xElement.Value);
+            return match.Success ? match.Groups[1].Value : null;
         }
 
         private string GetAssemblyName(XElement element){
@@ -176,10 +186,14 @@ namespace FixReferences {
                 var strings = new []{"DevExpress","System","Microsoft"};
                 var xElements = document.Descendants(ProjectUpdater.XNamespace + "Reference")
                     .Where(element => !strings.Any(s1 => element.Attribute("Include").Value.StartsWith(s1)));
+                if (Program.Options.AfterBuild){
+                    var assemblyPath = Path.Combine(RootDir, (@"Xpand.dll\" + Path.GetFileNameWithoutExtension(s) + ".dll"));
+                    var assemblies = Assembly.ReflectionOnlyLoadFrom(assemblyPath).GetReferencedAssemblies().Select(name => name.Name).ToArray();
+                    xElements = xElements.Where(element => assemblies.Contains(GetAssemblyName(element)));
+                }
                 return new KeyValuePair<string, IEnumerable<XElement>>(s, xElements);
             });
         }
-
     }
 
 }
