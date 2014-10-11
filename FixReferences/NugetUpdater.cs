@@ -35,15 +35,16 @@ namespace FixReferences {
             if (nuspecFileName.StartsWith("system"))
                 hashSet.Add(nuspecFileName.Replace("system.", "").Replace("system", ""));
             else if (nuspecFileName == "lib"){
-                hashSet.Add("utils");
-                hashSet.Add("xpo");
-                hashSet.Add("persistent.base");
-                hashSet.Add("persistent.baseimpl");
+                hashSet = GetLibHashSet();
             }
             else{
                 hashSet.Add(nuspecFileName);
             }
             return hashSet;
+        }
+
+        private static HashSet<string> GetLibHashSet(){
+            return new HashSet<string>{"utils", "xpo", "persistent.base", "persistent.baseimpl"};
         }
 
         private static string AdjustName(string name){
@@ -58,7 +59,7 @@ namespace FixReferences {
                 projects = projects.Where(s => !s.Contains("BaseImpl")).ToArray();
             }
             var allReferences = GetReferences(projects).ToArray();
-            var dependencies = GetDependencies(allReferences).ToArray();
+            var dependencies = GetDependencies(allReferences,isLibSpec).ToArray();
             UpdateDependencies(document,dependencies);
             UpdateFiles(document, allReferences,dependencies.Select(pair => pair.Key));
             if (isLibSpec){
@@ -82,9 +83,12 @@ namespace FixReferences {
 
         private void CreateReferenceFiles(IEnumerable<KeyValuePair<string, IEnumerable<XElement>>> allReferences, IEnumerable<XElement> dependencies, XElement filesElement){
             var xElements = allReferences.SelectMany(pair => pair.Value).DistinctBy(element => element.Attribute("Include").Value);
-            var elements = xElements.Except(dependencies);
+            var elements = xElements.Except(dependencies).Except(filesElement.Elements());
             foreach (var assemblyName in elements.Select(GetAssemblyName)){
-                filesElement.Add(NewFileElement(assemblyName));
+                var newFileElement = NewFileElement(assemblyName);
+                if (filesElement.DescendantNodes().Cast<XElement>().All(element => element.Attribute("src").Value != newFileElement.Attribute("src").Value)) {
+                    filesElement.Add(newFileElement);
+                }
             }
         }
 
@@ -142,7 +146,7 @@ namespace FixReferences {
             return _nuspecs.FirstOrDefault(s => adjustName == (Path.GetFileNameWithoutExtension(s)+"").ToLowerInvariant());
         }
 
-        private IEnumerable<KeyValuePair<XElement,string>> GetDependencies(IEnumerable<KeyValuePair<string, IEnumerable<XElement>>> references) {
+        private IEnumerable<KeyValuePair<XElement, string>> GetDependencies(IEnumerable<KeyValuePair<string, IEnumerable<XElement>>> references, bool isLibSpec) {
             var elements = new List<KeyValuePair<XElement, string>>();
             foreach (var reference in references){
                 var path = Path.Combine(Path.GetDirectoryName(reference.Key)+"", "packages.config");
@@ -161,6 +165,8 @@ namespace FixReferences {
                             continue;
                         }
                     }
+                    if (isLibSpec && GetLibHashSet().Any(s => assemblyName.ToLowerInvariant().Contains(s)))
+                        continue;
                     elements.Add(new KeyValuePair<XElement, string>(element, version));
                 }
             }

@@ -15,8 +15,6 @@
     <projectUrl>http://www.expandframework.com/#AVC</projectUrl>
     <dependencies>
       <dependency id="FluentNHibernate" version="3.3.3.4001" />
-      <dependency id="Iesi.Collections" version="3.3.3.4001" />
-      <dependency id="NHibernate" version="3.3.3.4001" />
     </dependencies>
   </metadata>
   <files>
