@@ -168,10 +168,18 @@ namespace FixReferences {
         }
 
         private string GetPackageId(XElement element){
-            var xElement = element.Descendants(ProjectUpdater.XNamespace+"HintPath").First();
-            var regex = new Regex(@"Support\\_third_party_assemblies\\Packages\\([^.]*)", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Multiline);
-            var match = regex.Match(xElement.Value);
-            return match.Success ? match.Groups[1].Value : null;
+            var xElement = element.Descendants(ProjectUpdater.XNamespace+"HintPath").FirstOrDefault();
+            if (xElement!=null){
+                var regex = new Regex(@"Support\\_third_party_assemblies\\Packages\\([^\\]*)",
+                    RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+                var match = regex.Match(xElement.Value);
+                if (match.Success){
+                    var value = match.Groups[1].Value;
+                    var index = Regex.Match(value, @"(\.([\d]+))", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Multiline).Groups[1].Index;
+                    return value.Substring(0, index);
+                }
+            }
+            return null;
         }
 
         private string GetAssemblyName(XElement element){

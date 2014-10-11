@@ -18,13 +18,13 @@
       <dependency id="AForge.Imaging" version="1.0.4.0" />
       <dependency id="AForge.Math" version="1.0.4.0" />
       <dependency id="AForge.Video" version="1.0.4.0" />
-      <dependency id="eXpandLib" version="14.1.7.5" />
+      <dependency id="eXpandLib" version="14.1.7.6" />
       <dependency id="Fasterflect" version="1.0.4.0" />
+      <dependency id="WindowsInput" version="1.0.4.0" />
     </dependencies>
   </metadata>
   <files>
     <file src="\Build\Temp\Xpand.EasyTest.dll" target="lib\net40\Xpand.EasyTest.dll" />
     <file src="\Build\Temp\Xpand.EasyTest.pdb" target="lib\net40\Xpand.EasyTest.pdb" />
-    <file src="\Build\Temp\WindowsInput.dll" target="lib\net40\WindowsInput.dll" />
   </files>
 </package>

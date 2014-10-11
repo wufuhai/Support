@@ -15,8 +15,8 @@
     <projectUrl>http://www.expandframework.com/#JobScheduler</projectUrl>
     <dependencies>
       <dependency id="Common.Logging" version="2.2.4" />
-      <dependency id="eXpandJobScheduler" version="14.1.7.5" />
-      <dependency id="eXpandLib" version="14.1.7.5" />
+      <dependency id="eXpandJobScheduler" version="14.1.7.6" />
+      <dependency id="eXpandLib" version="14.1.7.6" />
       <dependency id="Quartz" version="2.2.4" />
     </dependencies>
   </metadata>

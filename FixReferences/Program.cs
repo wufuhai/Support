@@ -35,7 +35,7 @@ namespace FixReferences {
                 projectReferencesUpdater.Update(file);
             }
 
-            var nuspecs = Directory.GetFiles(Path.Combine(rootDir, @"Support\Nuspec"), "lib.nuspec");
+            var nuspecs = Directory.GetFiles(Path.Combine(rootDir, @"Support\Nuspec"), "*.nuspec");
             foreach (var file in nuspecs) {
                 var projectReferencesUpdater = new NugetUpdater(documentHelper, rootDir, version, projectFiles,nuspecs);
                 projectReferencesUpdater.Update(file);
