@@ -27,7 +27,9 @@ namespace Xpand.ToolboxCreator {
                 return;
             }
             CreateAssemblyFoldersKey(wow);
-            Trace.Listeners.Add(new TextWriterTraceListener("toolboxcreator.log"));
+            Trace.AutoFlush = true;
+            Trace.Listeners.Add(new TextWriterTraceListener("toolboxcreator.log"){Name = "FileLog"});
+            Trace.Listeners.Add(new ConsoleTraceListener{Name = "ConsoleLog"});
             var version = new Version();
             var error = false;
             foreach (var file in Directory.EnumerateFiles(AppDomain.CurrentDomain.SetupInformation.ApplicationBase, "Xpand.ExpressApp*.dll")) {
@@ -40,7 +42,7 @@ namespace Xpand.ToolboxCreator {
                         var toolboxItemAttribute = type.GetCustomAttributes(typeof(ToolboxItemAttribute), true).OfType<ToolboxItemAttribute>().FirstOrDefault();
                         if (toolboxItemAttribute != null && !String.IsNullOrEmpty(toolboxItemAttribute.ToolboxItemTypeName)) {
                             Register(type, file, registryKeys);
-                            Console.WriteLine("Toolbox-->" + type.FullName);
+                            Trace.TraceInformation("Toolbox-->" + type.FullName);
                         }
                     }
                 }
@@ -51,7 +53,7 @@ namespace Xpand.ToolboxCreator {
                 }
             }
             if (error) {
-                MessageBox.Show("ToolboxCreator error");
+                MessageBox.Show("ToolboxCreator error logged in "+Trace.Listeners.OfType<TextWriterTraceListener>());
             }
             DeleteXpandEntries(registryKeys,s => !s.Contains(version.ToString()) );
 

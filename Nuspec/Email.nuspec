@@ -14,9 +14,9 @@
     <tags>DevExpress, eXpand, XAF, eXpressApp</tags>
     <projectUrl>http://www.expandframework.com/#Email</projectUrl>
     <dependencies>
-      <dependency id="eXpandLib" version="14.1.7.7" />
-      <dependency id="eXpandLogic" version="14.1.7.7" />
-      <dependency id="eXpandValidation" version="14.1.7.7" />
+      <dependency id="eXpandLib" version="14.1.7.8" />
+      <dependency id="eXpandLogic" version="14.1.7.8" />
+      <dependency id="eXpandValidation" version="14.1.7.8" />
     </dependencies>
   </metadata>
   <files>

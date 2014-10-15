@@ -14,7 +14,7 @@
     <tags>DevExpress, eXpand, XAF, eXpressApp</tags>
     <projectUrl>http://www.expandframework.com</projectUrl>
     <dependencies>
-      <dependency id="eXpandEasyTest" version="14.1.7.7" />
+      <dependency id="eXpandEasyTest" version="14.1.7.8" />
     </dependencies>
   </metadata>
   <files>
