@@ -13,7 +13,7 @@ namespace FixReferences {
 
         static void Main(string[] args) {
             Environment.CurrentDirectory = AppDomain.CurrentDomain.SetupInformation.ApplicationBase;
-            var rootDir = Path.GetFullPath(@"..\..\..\..");
+            var rootDir = Path.GetFullPath(@"..");
             _options = new Options();
             bool arguments = Parser.Default.ParseArguments(args, _options);
             if (arguments){
