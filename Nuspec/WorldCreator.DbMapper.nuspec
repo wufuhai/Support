@@ -14,8 +14,8 @@
     <tags>DevExpress, eXpand, XAF, eXpressApp</tags>
     <projectUrl>http://www.expandframework.com/#DBMapper</projectUrl>
     <dependencies>
-      <dependency id="eXpandLib" version="14.1.7.9" />
-      <dependency id="eXpandWorldCreator" version="14.1.7.9" />
+      <dependency id="eXpandLib" version="14.1.8.1" />
+      <dependency id="eXpandWorldCreator" version="14.1.8.1" />
     </dependencies>
   </metadata>
   <files>
