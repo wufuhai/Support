@@ -53,7 +53,7 @@ namespace Xpand.ToolboxCreator {
                 }
             }
             if (error) {
-                MessageBox.Show("ToolboxCreator error logged in "+Trace.Listeners.OfType<TextWriterTraceListener>());
+                MessageBox.Show("Error logged in toolboxcreator.log");
             }
             DeleteXpandEntries(registryKeys,s => !s.Contains(version.ToString()) );
 
