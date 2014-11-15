@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -42,36 +42,8 @@ namespace XpandTestExecutor{
             }
         }
 
-        private static string GetFileToUpdate(string easyTestFileName) {
-            using (var scriptStream = File.OpenRead(easyTestFileName)) {
-                using (var streamReader = new StreamReader(scriptStream, System.Text.Encoding.UTF8)) {
-                    while (streamReader.Peek() > -1) {
-                        string currentLine = streamReader.ReadLine() + "";
-                        currentLine = currentLine.TrimEnd();
-                        if (currentLine.StartsWith("#IncludeFile")) {
-                            int spaceIndex = currentLine.IndexOf(" ", StringComparison.Ordinal);
-                            string includedfileName = currentLine.Remove(0, spaceIndex + 1).Trim();
-                            if (!File.Exists(includedfileName)) {
-                                string fullFileName = Path.Combine(Path.GetDirectoryName(easyTestFileName) + "", includedfileName);
-                                includedfileName = fullFileName;
-                            }
-                            return includedfileName;
-                        }
-                        if (currentLine.StartsWith("#DropDB")) {
-                            return easyTestFileName;
-                        }
-                    }
-                }
-            }
-
-            throw new NotImplementedException(easyTestFileName);
-        }
-
-        private static void UpdateTestFileCore(string fileName, User user) {
+        private static void UpdateTestFileCore(string fileName, User user, Options options) {
             var allText = File.ReadAllText(fileName);
-            var xmlSerializer = new XmlSerializer(typeof(Options));
-            var stringReader = new StringReader(File.ReadAllText(Path.Combine(Path.GetDirectoryName(fileName)+"","config.xml")));
-            var options = (Options)xmlSerializer.Deserialize(stringReader);
             foreach (var testDatabase in options.TestDatabases.Cast<TestDatabase>()){
                 var suffix = user.Name != null ? "_" + user.Name : null;
                 allText = Regex.Replace(allText, @"(" +testDatabase.DefaultDBName()+ @")(_[^\s]*)?", "$1"+suffix, RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Multiline);    
@@ -80,8 +52,23 @@ namespace XpandTestExecutor{
         }
 
         public static void UpdateTestFile(EasyTest easyTest) {
-            var fileToUpdate = GetFileToUpdate(easyTest.FileName);
-            UpdateTestFileCore(fileToUpdate, easyTest.Users.Last());
+            var xmlSerializer = new XmlSerializer(typeof(Options));
+            var stringReader = new StringReader(File.ReadAllText(Path.Combine(Path.GetDirectoryName(easyTest.FileName) + "", "config.xml")));
+            var options = (Options)xmlSerializer.Deserialize(stringReader);
+            UpdateTestFileCore(easyTest.FileName, easyTest.Users.Last(), options);
+            foreach (var includedFile in IncludedFiles(easyTest.FileName)) {
+                UpdateTestFileCore(includedFile, easyTest.Users.Last(), options);
+            }
+        }
+
+        private static IEnumerable<string> IncludedFiles(string fileName){
+            var allText = File.ReadAllText(fileName);
+            var regexObj = new Regex("#IncludeFile (.*)inc", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+            Match matchResult = regexObj.Match(allText);
+            while (matchResult.Success){
+                yield return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(fileName) + "", matchResult.Groups[1].Value+"inc"));
+                matchResult = matchResult.NextMatch();
+            } 
         }
 
 

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -18,13 +17,29 @@ namespace XpandTestExecutor{
         }
         private static void UpdateAppConfigFiles(EasyTest easyTest, Options options) {
             var user = easyTest.Users.Last();
-            foreach (var alias in options.Aliases.Cast<TestAlias>().Where(@alias => alias.ContainsAppPath())) {
-                var sourcePath = Path.GetFullPath(alias.UpdateAppPath(null));
-                if (Directory.Exists(sourcePath)) {
-                    var destPath = Path.GetFullPath(alias.UpdateAppPath(user.Name));
-                    DirectoryCopy(sourcePath, destPath, true, sourcePath + @"\" + Program.EasyTestUsersDir);
-                    UpdateAppConfig(easyTest, options, alias, user);
+            if (user.Name!=null){
+                foreach (var alias in options.Aliases.Cast<TestAlias>().Where(@alias => alias.ContainsAppPath())){
+                    var sourcePath = Path.GetFullPath(alias.UpdateAppPath(null));
+                    if (Directory.Exists(sourcePath)){
+                        var destPath = Path.GetFullPath(alias.UpdateAppPath(user.Name));
+                        DirectoryCopy(sourcePath, destPath, true, sourcePath + @"\" + Program.EasyTestUsersDir);
+                        UpdateAppConfig(easyTest, options, alias, user);
+                    }
                 }
+            }
+            UpdateAdditionalApps(easyTest, options, user);
+        }
+
+        public static void UpdateAdditionalApps(EasyTest easyTest, Options options, User user){
+            var additionalApps =options.Applications.Cast<TestApplication>()
+                    .SelectMany(application => application.AdditionalAttributes)
+                    .Where(attribute => attribute.LocalName == "AdditionalApplications")
+                    .Select(attribute => attribute.Value);
+            foreach (var additionalApp in additionalApps){
+                var path = Path.Combine(Path.GetDirectoryName(additionalApp) + "", Path.GetFileName(additionalApp) + ".config");
+                var document = XDocument.Load(path);
+                UpdateAppConfigCore(easyTest, options, user, document);
+                document.Save(path);
             }
         }
 
@@ -34,11 +49,11 @@ namespace XpandTestExecutor{
                 var connectionStrings = document.Descendants("connectionStrings").SelectMany(element => element.Descendants())
                     .Where(element => element.Attribute("connectionString").Value.ToLowerInvariant().Contains(database.ToLowerInvariant())).Select(element
                         => element.Attribute("connectionString"));
-                foreach (var connectionString in connectionStrings) {
+                foreach (var connectionString in connectionStrings){
+                    string userNameSuffix = user.Name!=null?"_" + user.Name:null;
                     connectionString.Value = Regex.Replace(connectionString.Value,
-                        @"(.*)(" + database + @"[^;""\s]*)(.*)", "$1" + database + "_" + user.Name + "$3",
+                        @"(.*)(" + database + @"[^;""\s]*)(.*)", "$1" + database + userNameSuffix + "$3",
                         RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Multiline);
-
                 }
             }
         }
@@ -103,11 +118,14 @@ namespace XpandTestExecutor{
             var keyValuePair = LoadAppConfig(alias, options.Applications);
             if (File.Exists(keyValuePair.Value)) {
                 var document = keyValuePair.Key;
-                UpdatePort(easyTest.WinPort, document);
-                UpdateConnectionStrings(user, options, document);
+                UpdateAppConfigCore(easyTest, options, user, document);
                 document.Save(keyValuePair.Value);
             }
         }
 
+        private static void UpdateAppConfigCore(EasyTest easyTest, Options options, User user, XDocument document){
+            UpdatePort(easyTest.WinPort, document);
+            UpdateConnectionStrings(user, options, document);
+        }
     }
 }

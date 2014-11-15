@@ -16,8 +16,10 @@ namespace XpandTestExecutor {
 
         private static void Main(string[] args) {
             Trace.UseGlobalLock = true;
-            Trace.Listeners.Add(new TextWriterTraceListener("XpandTestExecutor.log"));
+            Trace.AutoFlush = true;
             Trace.Listeners.Add(new ConsoleTraceListener());
+            Trace.Listeners.Add(new TextWriterTraceListener("XpandTestExecutor.log"){Name = "FileLog",TraceOutputOptions = TraceOptions.DateTime});
+            
             AppDomain currentDomain = AppDomain.CurrentDomain;
             currentDomain.UnhandledException += CurrentDomainOnUnhandledException;
             try {
@@ -68,7 +70,7 @@ namespace XpandTestExecutor {
                 var userNames = (string)registryKey.GetValue("UserName", "");
                 if (!string.IsNullOrEmpty(userNames)) {
                     var userQueue = CreateUserQueue(registryKey, userNames);
-                    TestEnviroment.CLeanup(testsQueque);
+                    TestEnviroment.Cleanup(testsQueque);
                     int usersCount = userQueue.Count;
                     do {
                         if (testsQueque.Count > 0) {
@@ -226,12 +228,9 @@ namespace XpandTestExecutor {
         }
 
         private static void SetupEnviroment(string configPath, EasyTest easyTest) {
-            var user = easyTest.Users.Last();
             string fileName = Path.Combine(configPath, "config.xml");
             TestUpdater.UpdateTestConfig(easyTest, fileName);
-            if (user.Name != null) {
-                AppConfigUpdater.Update(fileName, configPath, easyTest);
-            }
+            AppConfigUpdater.Update(fileName, configPath, easyTest);
             TestUpdater.UpdateTestFile(easyTest);
         }
     }

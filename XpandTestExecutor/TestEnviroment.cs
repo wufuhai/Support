@@ -49,7 +49,7 @@ namespace XpandTestExecutor{
             }
         }
 
-        public static void CLeanup(Queue<EasyTest> easyTests){
+        public static void Cleanup(Queue<EasyTest> easyTests){
             var processes = Process.GetProcesses().Where(process => process.ProcessName.StartsWith("WebDev.WebServer40")).ToArray();
             foreach (var source in processes) {
                 source.Kill();
