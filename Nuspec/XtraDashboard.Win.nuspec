@@ -14,10 +14,10 @@
     <tags>DevExpress, eXpand, XAF, eXpressApp</tags>
     <projectUrl>http://www.expandframework.com/#Dashboard</projectUrl>
     <dependencies>
-      <dependency id="eXpandDashboard" version="14.1.8.1" />
-      <dependency id="eXpandLib" version="14.1.8.1" />
-      <dependency id="eXpandSecurityWin" version="14.1.8.1" />
-      <dependency id="eXpandSystemWin" version="14.1.8.1" />
+      <dependency id="eXpandDashboard" version="14.1.8.2" />
+      <dependency id="eXpandLib" version="14.1.8.2" />
+      <dependency id="eXpandSecurityWin" version="14.1.8.2" />
+      <dependency id="eXpandSystemWin" version="14.1.8.2" />
       <dependency id="Fasterflect" version="2.1.3" />
     </dependencies>
   </metadata>

@@ -15,7 +15,7 @@
     <projectUrl>http://www.expandframework.com</projectUrl>
     <dependencies>
       <dependency id="AForge.Video" version="1.0.4.0" />
-      <dependency id="eXpandLib" version="14.1.8.1" />
+      <dependency id="eXpandLib" version="14.1.8.2" />
       <dependency id="Fasterflect" version="1.0.4.0" />
       <dependency id="WindowsInput" version="1.0.4.0" />
     </dependencies>
