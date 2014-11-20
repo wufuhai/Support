@@ -124,7 +124,12 @@ namespace XpandTestExecutor {
         }
 
         private static Queue<EasyTest> CreateTestsQueque(bool useCustomPort) {
-            string[] tests = File.ReadAllLines("easytests.txt");
+            var allTests = File.ReadAllLines("easytests.txt");
+            var autoTests = allTests.Where(s => s.ToLower().EndsWith("autotest.ets")).ToArray();
+            var demosAutotests = autoTests.Where(s => !s.Contains(@"\Demos\Modules\"));
+            var moduleAutotests = autoTests.Where(s => s.Contains(@"\Demos\Modules\"));
+            autoTests = demosAutotests.Concat(moduleAutotests).ToArray();
+            string[] tests = autoTests.Concat(allTests.Except(autoTests)).ToArray();
             var testsQueque = new Queue<EasyTest>();
             CheckConfigSharing(tests);
             for (int index = 0; index < tests.Length; index++) {

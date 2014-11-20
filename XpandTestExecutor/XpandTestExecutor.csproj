@@ -31,7 +31,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DevExpress.EasyTest.v14.1">
+    <Reference Include="DevExpress.EasyTest.v14.2">
       <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="System" />
