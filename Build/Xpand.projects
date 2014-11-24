@@ -100,6 +100,7 @@
 					Demos\XVideoRental\XVideoRental.sln;" 
 					Condition="$(RecompiledDXSources) == $(Configuration)"/>
     <DemoTesterProjects Include="
+				    Xpand\Xpand.ExpressApp.Modules\Quartz.Server\Xpand.Quartz.Server.csproj;
                    Demos\Modules\AdditionalViewControlProvider\AdditionalViewControlProviderTester.Web\AdditionalViewControlProviderTester.Web.csproj;
                    Demos\Modules\AdditionalViewControlProvider\AdditionalViewControlProviderTester.Win\AdditionalViewControlProviderTester.Win.csproj;
                    Demos\Modules\AuditTrail\AuditTrailTester.Win\AuditTrailTester.Win.csproj;
