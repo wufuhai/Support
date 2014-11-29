@@ -52,7 +52,7 @@ namespace XpandTestExecutor {
                 SetupEnviroment(workingDirectory, easyTest);
                 var process = new Process {
                     StartInfo =
-                        new ProcessStartInfo(Path.Combine(workingDirectory, "TestExecutor.v" + args[0] + ".exe"), easyTest.FileName) {
+                        new ProcessStartInfo(Path.Combine(workingDirectory, "TestExecutor.v" + args[0] + ".exe"), Path.GetFileName(easyTest.FileName)) {
                             UseShellExecute = false,
                             RedirectStandardOutput = true,
                             WorkingDirectory = workingDirectory
