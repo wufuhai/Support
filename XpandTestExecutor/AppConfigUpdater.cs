@@ -87,8 +87,7 @@ namespace XpandTestExecutor{
 
         private static XElement GetAppSettingsElement(XDocument document) {
             Debug.Assert(document.Root != null, "config.Root != null");
-            XElement appSettings = document.Root.Element("appSettings");
-            Debug.Assert(appSettings != null, "appSettings != null");
+            XElement appSettings = document.Root.Element("appSettings")??new XElement("AppSettings");
             var element = appSettings.Descendants().FirstOrDefault(node => node.Attribute("key").Value == "EasyTestCommunicationPort");
             if (element == null) {
                 element = new XElement("add");

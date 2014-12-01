@@ -61,6 +61,7 @@ namespace XpandTestExecutor {
                 process.Start();
                 Trace.TraceInformation(process.StandardOutput.ReadToEnd());
                 process.WaitForExit();
+                AfterProcessExecute(easyTest, workingDirectory);
             }
         }
 
@@ -198,15 +199,20 @@ namespace XpandTestExecutor {
                 Thread.Sleep(5000);
             }
             process.WaitForExit();
-            lock (_locker) {
+            return AfterProcessExecute(easyTest, directoryName);
+        }
+
+        private static bool AfterProcessExecute(EasyTest easyTest, string directoryName){
+            lock (_locker){
                 CopyXafLogToPath(directoryName);
 
-                var logTests = GetLogTests(easyTest).Tests.Where(test => test.Name.ToLowerInvariant() == (Path.GetFileNameWithoutExtension(easyTest.FileName) + "").ToLowerInvariant()).ToArray();
-                if (logTests.All(test => test.Result == "Passed")) {
+                var logTests =GetLogTests(easyTest).Tests.Where(test =>test.Name.ToLowerInvariant() ==(Path.GetFileNameWithoutExtension(easyTest.FileName) + "").ToLowerInvariant()).ToArray();
+                if (logTests.All(test => test.Result == "Passed")){
                     Trace.TraceInformation(easyTest.FileName + " passed");
                     return true;
                 }
-                Trace.TraceInformation(easyTest.FileName + " not passed=" + string.Join(Environment.NewLine, logTests.SelectMany(test => test.Errors.Select(error => error.Message.Text))));
+                Trace.TraceInformation(easyTest.FileName + " not passed=" +string.Join(Environment.NewLine,
+                                           logTests.SelectMany(test => test.Errors.Select(error => error.Message.Text))));
                 return false;
             }
         }
