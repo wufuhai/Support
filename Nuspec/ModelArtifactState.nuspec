@@ -14,9 +14,9 @@
     <tags>DevExpress, eXpand, XAF, eXpressApp</tags>
     <projectUrl>http://www.expandframework.com/#modelartifact</projectUrl>
     <dependencies>
-      <dependency id="eXpandLib" version="14.2.2.2" />
-      <dependency id="eXpandLogic" version="14.2.2.2" />
-      <dependency id="eXpandValidation" version="14.2.2.2" />
+      <dependency id="eXpandLib" version="14.2.3.1" />
+      <dependency id="eXpandLogic" version="14.2.3.1" />
+      <dependency id="eXpandValidation" version="14.2.3.1" />
     </dependencies>
   </metadata>
   <files>
