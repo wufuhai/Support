@@ -17,7 +17,6 @@
 					Support\VideoBuilder\VideoBuilder.csproj;
 					Support\ProcessAsUser\ProcessAsUser.csproj;
 					Support\ProcessAsUser\ProcessAsUserWrapper\ProcessAsUserWrapper.csproj;
-					Support\XpandTestExecutor\XpandTestExecutor.sln;
 					Support\GacInstaller\GacInstaller.csproj"/>
     <VSAddons Include="Xpand.Addins\XpandAddIns.csproj;Xpand.Addins\Xpand.ExpressApp.ModelEditor\Xpand.ExpressApp.ModelEditor.csproj;"></VSAddons>
 	<ModuleProjects Include="
