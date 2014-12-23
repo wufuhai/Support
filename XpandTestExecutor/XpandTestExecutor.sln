@@ -9,14 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XpandTestExecutor.Module.Wi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XpandTestExecutor.Win", "XpandTestExecutor.Win\XpandTestExecutor.Win.csproj", "{D05D93DF-312D-4D4E-B980-726871EC7833}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xpand.Persistent.Base", "..\..\Xpand\Xpand.Persistent\Xpand.Persistent.Base\Xpand.Persistent.Base.csproj", "{0E40CCB3-7904-4300-BCD6-E34D275E6370}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xpand.ExpressApp.Win", "..\..\Xpand\Xpand.ExpressApp\Xpand.ExpressApp.Win\Xpand.ExpressApp.Win.csproj", "{C88FF08D-3819-41C0-A1F2-F4FF0CDFE99D}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xpand.ExpressApp", "..\..\Xpand\Xpand.ExpressApp\Xpand.ExpressApp\Xpand.ExpressApp.csproj", "{A85F685A-F56F-4C9A-A5A3-C2444DB4FB78}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xpand.ExpressApp.Dashboard", "..\..\Xpand\Xpand.ExpressApp.Modules\Dashboard\Xpand.ExpressApp.Dashboard.csproj", "{56242176-A728-4B97-BC0A-58B7D80FF412}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,42 +48,6 @@ Global
 		{D05D93DF-312D-4D4E-B980-726871EC7833}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D05D93DF-312D-4D4E-B980-726871EC7833}.Test|Any CPU.ActiveCfg = EasyTest|Any CPU
 		{D05D93DF-312D-4D4E-B980-726871EC7833}.Test|Any CPU.Build.0 = EasyTest|Any CPU
-		{0E40CCB3-7904-4300-BCD6-E34D275E6370}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0E40CCB3-7904-4300-BCD6-E34D275E6370}.EasyTest|Any CPU.ActiveCfg = Test|Any CPU
-		{0E40CCB3-7904-4300-BCD6-E34D275E6370}.EasyTest|Any CPU.Build.0 = Test|Any CPU
-		{0E40CCB3-7904-4300-BCD6-E34D275E6370}.RecompiledDxSources|Any CPU.ActiveCfg = Release|Any CPU
-		{0E40CCB3-7904-4300-BCD6-E34D275E6370}.RecompiledDxSources|Any CPU.Build.0 = Release|Any CPU
-		{0E40CCB3-7904-4300-BCD6-E34D275E6370}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0E40CCB3-7904-4300-BCD6-E34D275E6370}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0E40CCB3-7904-4300-BCD6-E34D275E6370}.Test|Any CPU.ActiveCfg = Test|Any CPU
-		{0E40CCB3-7904-4300-BCD6-E34D275E6370}.Test|Any CPU.Build.0 = Test|Any CPU
-		{C88FF08D-3819-41C0-A1F2-F4FF0CDFE99D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C88FF08D-3819-41C0-A1F2-F4FF0CDFE99D}.EasyTest|Any CPU.ActiveCfg = Release|Any CPU
-		{C88FF08D-3819-41C0-A1F2-F4FF0CDFE99D}.EasyTest|Any CPU.Build.0 = Release|Any CPU
-		{C88FF08D-3819-41C0-A1F2-F4FF0CDFE99D}.RecompiledDxSources|Any CPU.ActiveCfg = Release|Any CPU
-		{C88FF08D-3819-41C0-A1F2-F4FF0CDFE99D}.RecompiledDxSources|Any CPU.Build.0 = Release|Any CPU
-		{C88FF08D-3819-41C0-A1F2-F4FF0CDFE99D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C88FF08D-3819-41C0-A1F2-F4FF0CDFE99D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C88FF08D-3819-41C0-A1F2-F4FF0CDFE99D}.Test|Any CPU.ActiveCfg = Release|Any CPU
-		{C88FF08D-3819-41C0-A1F2-F4FF0CDFE99D}.Test|Any CPU.Build.0 = Release|Any CPU
-		{A85F685A-F56F-4C9A-A5A3-C2444DB4FB78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A85F685A-F56F-4C9A-A5A3-C2444DB4FB78}.EasyTest|Any CPU.ActiveCfg = Release|Any CPU
-		{A85F685A-F56F-4C9A-A5A3-C2444DB4FB78}.EasyTest|Any CPU.Build.0 = Release|Any CPU
-		{A85F685A-F56F-4C9A-A5A3-C2444DB4FB78}.RecompiledDxSources|Any CPU.ActiveCfg = Release|Any CPU
-		{A85F685A-F56F-4C9A-A5A3-C2444DB4FB78}.RecompiledDxSources|Any CPU.Build.0 = Release|Any CPU
-		{A85F685A-F56F-4C9A-A5A3-C2444DB4FB78}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A85F685A-F56F-4C9A-A5A3-C2444DB4FB78}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A85F685A-F56F-4C9A-A5A3-C2444DB4FB78}.Test|Any CPU.ActiveCfg = Release|Any CPU
-		{A85F685A-F56F-4C9A-A5A3-C2444DB4FB78}.Test|Any CPU.Build.0 = Release|Any CPU
-		{56242176-A728-4B97-BC0A-58B7D80FF412}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{56242176-A728-4B97-BC0A-58B7D80FF412}.EasyTest|Any CPU.ActiveCfg = RecompiledDxSources|Any CPU
-		{56242176-A728-4B97-BC0A-58B7D80FF412}.EasyTest|Any CPU.Build.0 = RecompiledDxSources|Any CPU
-		{56242176-A728-4B97-BC0A-58B7D80FF412}.RecompiledDxSources|Any CPU.ActiveCfg = RecompiledDxSources|Any CPU
-		{56242176-A728-4B97-BC0A-58B7D80FF412}.RecompiledDxSources|Any CPU.Build.0 = RecompiledDxSources|Any CPU
-		{56242176-A728-4B97-BC0A-58B7D80FF412}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{56242176-A728-4B97-BC0A-58B7D80FF412}.Release|Any CPU.Build.0 = Release|Any CPU
-		{56242176-A728-4B97-BC0A-58B7D80FF412}.Test|Any CPU.ActiveCfg = RecompiledDxSources|Any CPU
-		{56242176-A728-4B97-BC0A-58B7D80FF412}.Test|Any CPU.Build.0 = RecompiledDxSources|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
