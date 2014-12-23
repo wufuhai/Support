@@ -1,13 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management;
 using DevExpress.EasyTest.Framework;
+using XpandTestExecutor.Module.BusinessObjects;
 
-namespace XpandTestExecutor{
-    public class TestEnviroment{
+namespace XpandTestExecutor.Module {
+    public class TestEnviroment {
         public static void KillWebDev(string name) {
             KillProccesses(name, i => Process.GetProcessById(i).ProcessName.StartsWith("WebDev.WebServer40"));
         }
@@ -49,7 +49,7 @@ namespace XpandTestExecutor{
             }
         }
 
-        public static void Cleanup(Queue<EasyTest> easyTests){
+        public static void Cleanup(EasyTest[] easyTests) {
             var processes = Process.GetProcesses().Where(process => process.ProcessName.StartsWith("WebDev.WebServer40")).ToArray();
             foreach (var source in processes) {
                 source.Kill();
@@ -62,7 +62,7 @@ namespace XpandTestExecutor{
                         var options = Options.LoadOptions(optionsStream, null, null, easyTest.Key);
                         foreach (var alias in options.Aliases.Cast<TestAlias>().Where(@alias => alias.ContainsAppPath())) {
                             var appPath = alias.UpdateAppPath(null);
-                            var usersDir = Path.Combine(appPath, Program.EasyTestUsersDir);
+                            var usersDir = Path.Combine(appPath, TestRunner.EasyTestUsersDir);
                             if (Directory.Exists(usersDir))
                                 Directory.Delete(usersDir, true);
                         }
@@ -74,5 +74,8 @@ namespace XpandTestExecutor{
             }
 
         }
+
+
+
     }
 }

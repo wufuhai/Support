@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Application>
+  <Views>
+    <DetailView Id="EasyTest_DetailView">
+      <Items>
+        <PropertyEditor Id="FileName" OpenPathWithExplorer="True" />
+      </Items>
+    </DetailView>
+    <ListView Id="ExecutionInfo_ListView">
+      <Columns>
+        <ColumnInfo Id="Duration">
+          <DurationSettings DisplayTotal="Minutes" />
+        </ColumnInfo>
+      </Columns>
+    </ListView>
+  </Views>
+</Application>

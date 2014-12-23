@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Application Title="XpandTestExecutor" Logo="ExpressAppLogo">
+  <BOModel>
+    <Class Name="XpandTestExecutor.Module.BusinessObjects.EasyTest">
+      <AppearanceRules>
+        <AppearanceRule Id="Failed Color" Context="ListView" Criteria="[Failed] = True And [EasyTestExecutionInfos][[ExecutionInfo.Sequence] = CurrentSequence()]" TargetItems="*" FontColor="Red" IsNewNode="True" />
+      </AppearanceRules>
+    </Class>
+    <Class Name="XpandTestExecutor.Module.BusinessObjects.ExecutionInfo">
+      <AppearanceRules>
+        <AppearanceRule Id="Failed Color" FontColor="Red" TargetItems="*" Criteria="[Failed] = True" IsNewNode="True" />
+      </AppearanceRules>
+    </Class>
+  </BOModel>
+  <NavigationItems>
+    <Items>
+      <Item Id="Default">
+        <Items>
+          <Item Id="@f675672f-681b-40d5-82e4-ef2a43968a90" ViewId="Dashboard" IsNewNode="True" />
+        </Items>
+      </Item>
+    </Items>
+  </NavigationItems>
+  <Views>
+    <ListView Id="EasyTest_EasyTestExecutionInfos_ListView" Criteria="[ExecutionInfo.Sequence] = CurrentSequence()" />
+    <ListView Id="ExecutionInfo_ListView">
+      <Columns>
+        <ColumnInfo Id="Sequence" SortOrder="Descending" />
+      </Columns>
+    </ListView>
+    <DashboardView Id="Dashboard" IsNewNode="True">
+      <Items IsNewNode="True">
+        <DashboardViewItem Id="EasyTests" ViewId="EasyTest_ListView" IsNewNode="True">
+          <Filter DataSourceView="ExecutionInfo_ListView" IsNewNode="True" />
+        </DashboardViewItem>
+        <DashboardViewItem Id="ExecutionInfo" ViewId="ExecutionInfo_ListView" IsNewNode="True" />
+      </Items>
+      <Layout IsNewNode="True">
+        <LayoutGroup Id="Main" ShowCaption="False" Direction="Horizontal" Index="0" RelativeSize="100" IsNewNode="True">
+          <LayoutItem Id="ExecutionInfo" ViewItem="ExecutionInfo" Index="0" SizeConstraintsType="Default" RelativeSize="22.163120567375888" IsNewNode="True" />
+          <LayoutItem Id="EasyTests" ViewItem="EasyTests" Index="1" SizeConstraintsType="Default" RelativeSize="77.836879432624116" IsNewNode="True" />
+        </LayoutGroup>
+      </Layout>
+    </DashboardView>
+    <ListView Id="EasyTest_ListView" MasterDetailMode="ListViewAndDetailView" />
+  </Views>
+</Application>
