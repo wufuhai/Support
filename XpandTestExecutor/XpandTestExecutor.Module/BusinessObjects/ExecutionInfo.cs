@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using DevExpress.Data.Filtering;
+using DevExpress.ExpressApp.Utils;
 using DevExpress.Persistent.Base;
 using DevExpress.Persistent.BaseImpl;
 using DevExpress.Xpo;
@@ -14,7 +15,6 @@ namespace XpandTestExecutor.Module.BusinessObjects{
     [FriendlyKeyProperty("Sequence")]
     public class ExecutionInfo : BaseObject, ISupportSequenceObject{
         private DateTime _creationDate;
-        private int _executionRetries;
 
         public ExecutionInfo(Session session)
             : base(session){
@@ -22,12 +22,6 @@ namespace XpandTestExecutor.Module.BusinessObjects{
 
         public double Duration{
             get { return EasyTestExecutionInfos.Duration(); }
-        }
-
-        [VisibleInListView(false)]
-        public int ExecutionRetries{
-            get { return _executionRetries; }
-            set { SetPropertyValue("ExecutionRetries", ref _executionRetries, value); }
         }
 
         [Association("ExecutionInfos-Users")]
@@ -99,7 +93,6 @@ namespace XpandTestExecutor.Module.BusinessObjects{
 
         public override void AfterConstruction(){
             base.AfterConstruction();
-            ExecutionRetries = 2;
             CreationDate = DateTime.Now;
         }
 
@@ -107,7 +100,7 @@ namespace XpandTestExecutor.Module.BusinessObjects{
             int passedEasyTests = PassedEasyTestExecutionInfos.Select(info => info.EasyTest).Distinct().Count();
             int failed =
                 FailedEasyTestExecutionInfos.GroupBy(info => info.EasyTest)
-                    .Count(infos => infos.Count() == ExecutionRetries);
+                    .Count(infos => infos.Count() == ((IModelOptionsTestExecutor) CaptionHelper.ApplicationModel.Options).ExecutionRetries);
             return failed + passedEasyTests;
         }
 

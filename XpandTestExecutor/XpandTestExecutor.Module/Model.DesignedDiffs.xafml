@@ -22,12 +22,6 @@
     </Items>
   </NavigationItems>
   <Views>
-    <ListView Id="EasyTest_EasyTestExecutionInfos_ListView" Criteria="[ExecutionInfo.Sequence] = CurrentSequence()" />
-    <ListView Id="ExecutionInfo_ListView">
-      <Columns>
-        <ColumnInfo Id="Sequence" SortOrder="Descending" />
-      </Columns>
-    </ListView>
     <DashboardView Id="Dashboard" IsNewNode="True">
       <Items IsNewNode="True">
         <DashboardViewItem Id="EasyTests" ViewId="EasyTest_ListView" IsNewNode="True">
@@ -42,6 +36,22 @@
         </LayoutGroup>
       </Layout>
     </DashboardView>
-    <ListView Id="EasyTest_ListView" MasterDetailMode="ListViewAndDetailView" />
+    <ListView Id="EasyTest_EasyTestExecutionInfos_ListView" Criteria="[ExecutionInfo.Sequence] = CurrentSequence()" />
+    <ListView Id="EasyTest_ListView" MasterDetailMode="ListViewAndDetailView" IsGroupPanelVisible="False" AutoExpandAllGroups="True">
+      <Columns>
+        <ColumnInfo Id="Name" Index="0" />
+        <ColumnInfo Id="Application" SortOrder="Ascending" GroupIndex="0" Index="1" />
+        <ColumnInfo Id="Duration" Index="2" />
+      </Columns>
+      <Filters>
+        <Filter Id="All" IsNewNode="True" />
+        <Filter Id="Failed" Criteria="[Failed] = True" IsNewNode="True" />
+      </Filters>
+    </ListView>
+    <ListView Id="ExecutionInfo_ListView">
+      <Columns>
+        <ColumnInfo Id="Sequence" SortOrder="Descending" />
+      </Columns>
+    </ListView>
   </Views>
 </Application>
