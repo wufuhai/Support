@@ -15,15 +15,28 @@ namespace XpandTestExecutor.Module.BusinessObjects{
     [FriendlyKeyProperty("Sequence")]
     public class ExecutionInfo : BaseObject, ISupportSequenceObject{
         private DateTime _creationDate;
+        private TimeSpan _start;
+        private TimeSpan _end;
 
         public ExecutionInfo(Session session)
             : base(session){
         }
 
-        public double Duration{
-            get { return EasyTestExecutionInfos.Duration(); }
+        [InvisibleInAllViews]
+        public TimeSpan Start {
+            get { return _start; }
+            set { SetPropertyValue("Start", ref _start, value); }
         }
 
+        [InvisibleInAllViews]
+        public TimeSpan End {
+            get { return _end; }
+            set { SetPropertyValue("End", ref _end, value); }
+        }
+
+        public int Duration {
+            get { return (int)End.Subtract(Start).TotalMinutes; }
+        }
         [Association("ExecutionInfos-Users")]
         public XPCollection<WindowsUser> WindowsUsers{
             get { return GetCollection<WindowsUser>("WindowsUsers"); }
@@ -39,7 +52,7 @@ namespace XpandTestExecutor.Module.BusinessObjects{
                 CriteriaOperator expression = new XPQuery<EasyTestExecutionInfo>(Session).TransformExpression(info
                     =>
                     info.ExecutionInfo.Oid == Oid &&
-                    (info.State != EasyTestExecutionInfoState.Failed && info.State != EasyTestExecutionInfoState.Passed));
+                    (info.State != EasyTestState.Failed && info.State != EasyTestState.Passed));
                 return new XPCollection<EasyTestExecutionInfo>(Session, expression);
             }
         }
@@ -55,7 +68,7 @@ namespace XpandTestExecutor.Module.BusinessObjects{
             get{
                 IEnumerable<EasyTest> passedEasyTests =
                     EasyTestExecutionInfos.GroupBy(info => info.EasyTest)
-                        .Where(infos => infos.Any(info => info.State == EasyTestExecutionInfoState.Passed))
+                        .Where(infos => infos.Any(info => info.State == EasyTestState.Passed))
                         .Select(infos => infos.Key);
                 return new XPCollection<EasyTestExecutionInfo>(Session,
                     EasyTestExecutionInfos.Where(info => passedEasyTests.Contains(info.EasyTest)));
@@ -96,15 +109,6 @@ namespace XpandTestExecutor.Module.BusinessObjects{
             CreationDate = DateTime.Now;
         }
 
-        public int ExecutionFinished(){
-            int passedEasyTests = PassedEasyTestExecutionInfos.Select(info => info.EasyTest).Distinct().Count();
-            int failed =
-                FailedEasyTestExecutionInfos.GroupBy(info => info.EasyTest)
-                    .Count(infos => infos.Count() == ((IModelOptionsTestExecutor) CaptionHelper.ApplicationModel.Options).ExecutionRetries);
-            return failed + passedEasyTests;
-        }
-
-
         public IQueryable<EasyTest> GetTestsToExecute(int retries){
             if (retries == 0){
                 var easyTests = new XPQuery<EasyTest>(Session);
@@ -126,11 +130,19 @@ namespace XpandTestExecutor.Module.BusinessObjects{
             IEnumerable<WindowsUser> users =
                 EasyTestExecutionInfos.Where(
                     info =>
-                        (info.State == EasyTestExecutionInfoState.Running ||
-                         info.State == EasyTestExecutionInfoState.NotStarted))
+                        (info.State == EasyTestState.Running ||
+                         info.State == EasyTestState.NotStarted))
                     .Select(info => info.WindowsUser)
                     .Distinct();
             return WindowsUsers.Except(users);
+        }
+
+        public int FinishedEasyTestExecutionInfos() {
+            int passedEasyTests = PassedEasyTestExecutionInfos.Select(info => info.EasyTest).Distinct().Count();
+            int failed =
+                FailedEasyTestExecutionInfos.GroupBy(info => info.EasyTest)
+                    .Count(infos => infos.Count() == ((IModelOptionsTestExecutor)CaptionHelper.ApplicationModel.Options).ExecutionRetries);
+            return failed + passedEasyTests;
         }
     }
 }

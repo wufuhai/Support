@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using DevExpress.EasyTest.Framework;
@@ -23,6 +25,15 @@ namespace XpandTestExecutor.Module.BusinessObjects{
             : base(session) {
         }
 
+        public LogTest[] GetFailedLogTests() {
+            var directoryName = Path.GetDirectoryName(FileName) + "";
+            var fileName = Path.Combine(directoryName, "testslog.xml");
+            using (var optionsStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                return LogTests.LoadTestsResults(optionsStream).Tests.Where(test 
+                    => test != null && test.Name.ToLowerInvariant() == (Path.GetFileNameWithoutExtension(FileName) + "").ToLowerInvariant()).Where(test 
+                        =>test.Result!="Passed" ).ToArray();
+            }
+        }
         public double Duration {
             get { return CurrentSequenceInfos.Duration(); }
         }
@@ -108,14 +119,6 @@ namespace XpandTestExecutor.Module.BusinessObjects{
                 return EasyTestExecutionInfos.First(info => info.Sequence == max);
             }
             return null;
-        }
-
-        public void SetCurrentExecutionState(EasyTestExecutionInfoState state){
-            LastEasyTestExecutionInfo.State = state;
-            if (state == EasyTestExecutionInfoState.Running)
-                LastEasyTestExecutionInfo.Start = DateTime.Now.TimeOfDay;
-            else if (state == EasyTestExecutionInfoState.Passed || state == EasyTestExecutionInfoState.Failed)
-                LastEasyTestExecutionInfo.End = DateTime.Now.TimeOfDay;
         }
 
         protected override void OnSaving(){

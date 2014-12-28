@@ -20,7 +20,7 @@ namespace XpandTestExecutor.Module {
         private static bool ExecutionFinished(IDataLayer dataLayer, Guid executionInfoKey, int testsCount) {
             using (var unitOfWork = new UnitOfWork(dataLayer)) {
                 var executionInfo = unitOfWork.GetObjectByKey<ExecutionInfo>(executionInfoKey, true);
-                return executionInfo.EasyTestExecutionInfos.Count() >= testsCount && executionInfo.ExecutionFinished() == testsCount;
+                return executionInfo.EasyTestExecutionInfos.Count() >= testsCount && executionInfo.FinishedEasyTestExecutionInfos() == testsCount;
             }
         }
 
@@ -41,7 +41,7 @@ namespace XpandTestExecutor.Module {
                             StartInfo = processStartInfo
                         };
                         process.Start();
-                        easyTest.SetCurrentExecutionState(EasyTestExecutionInfoState.Running);
+                        easyTest.LastEasyTestExecutionInfo.Update(EasyTestState.Running);
                         easyTest.Session.ValidateAndCommitChanges();
                         Thread.Sleep(5000);
                     }
@@ -59,7 +59,7 @@ namespace XpandTestExecutor.Module {
 
         private static void LogErrors(EasyTest easyTest, Exception e) {
             lock (Locker) {
-                easyTest.SetCurrentExecutionState(EasyTestExecutionInfoState.Failed);
+                easyTest.LastEasyTestExecutionInfo.Update(EasyTestState.Failed);
                 easyTest.Session.ValidateAndCommitChanges();
                 var directoryName = Path.GetDirectoryName(easyTest.FileName) + "";
                 string fileName = Path.Combine(directoryName, "config.xml");
@@ -96,51 +96,41 @@ namespace XpandTestExecutor.Module {
                 using (var unitOfWork = new UnitOfWork(dataLayer))
                 {
                     var easyTest = unitOfWork.GetObjectByKey<EasyTest>(easyTestKey,true);
-                    CopyXafLogToPath(Path.GetDirectoryName(easyTest.FileName) + "");
-                    var logTests = GetLogTests(easyTest).Tests.Where(test => test != null && test.Name.ToLowerInvariant() == (Path.GetFileNameWithoutExtension(easyTest.FileName) + "").ToLowerInvariant()).ToArray();
-                    var state = EasyTestExecutionInfoState.Passed;
+                    var directoryName = Path.GetDirectoryName(easyTest.FileName) + "";
+                    CopyXafLogs(directoryName);
+                    var logTests = easyTest.GetFailedLogTests();
+                    var state = EasyTestState.Passed;
                     if (logTests.All(test => test.Result == "Passed")) {
                         Tracing.Tracer.LogText(easyTest.FileName + " passed");
                     }
                     else {
                         Tracing.Tracer.LogText(easyTest.FileName + " not passed=" + string.Join(Environment.NewLine,
                             logTests.SelectMany(test => test.Errors.Select(error => error.Message.Text))));
-                        state = EasyTestExecutionInfoState.Failed;
+                        state = EasyTestState.Failed;
                     }
-                    easyTest.SetCurrentExecutionState(state);
+                    easyTest.LastEasyTestExecutionInfo.Update(state);
                     easyTest.Session.ValidateAndCommitChanges();
                     TestEnviroment.KillWebDev(easyTest.LastEasyTestExecutionInfo.WindowsUser.Name);
                 }
             }
         }
 
-        private static void CopyXafLogToPath(string directoryName) {
+        private static void CopyXafLogs(string directoryName) {
             string fileName = Path.Combine(directoryName, "config.xml");
             using (var optionsStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                 Options options = Options.LoadOptions(optionsStream, null, null, directoryName);
                 foreach (var alias in options.Aliases.Cast<TestAlias>().Where(@alias => alias.ContainsAppPath())) {
                     var suffix = alias.IsWinAppPath() ? "_win" : "_web";
                     var sourceFileName = Path.Combine(alias.Value, "eXpressAppFramework.log");
-                    if (File.Exists(sourceFileName))
+                    if (File.Exists(sourceFileName)) {
                         File.Copy(sourceFileName, Path.Combine(directoryName, "eXpressAppFramework" + suffix + ".log"), true);
+                    }
                 }
             }
         }
 
-        private static LogTests GetLogTests(EasyTest easyTest) {
-            var directoryName = Path.GetDirectoryName(easyTest.FileName) + "";
-            var fileName = Path.Combine(directoryName, "testslog.xml");
-            using (var optionsStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                return LogTests.LoadTestsResults(optionsStream);
-            }
-        }
-
         private static void SetupEnviroment(EasyTest easyTest) {
-            string configPath = Path.GetDirectoryName(easyTest.FileName) + "";
-            string fileName = Path.Combine(configPath, "config.xml");
-            TestUpdater.UpdateTestConfig(easyTest, fileName);
-            AppConfigUpdater.Update(fileName, configPath, easyTest);
-            TestUpdater.UpdateTestFile(easyTest);
+            TestEnviroment.Setup(easyTest.LastEasyTestExecutionInfo);
         }
 
         public static void Execute(string fileName, bool isSystem) {

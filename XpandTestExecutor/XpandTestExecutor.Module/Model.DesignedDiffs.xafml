@@ -6,6 +6,12 @@
         <AppearanceRule Id="Failed Color" Context="ListView" Criteria="[Failed] = True And [EasyTestExecutionInfos][[ExecutionInfo.Sequence] = CurrentSequence()]" TargetItems="*" FontColor="Red" IsNewNode="True" />
       </AppearanceRules>
     </Class>
+    <Class Name="XpandTestExecutor.Module.BusinessObjects.EasyTestExecutionInfo">
+      <AppearanceRules>
+        <AppearanceRule Id="Hide Web Tabs" TargetItems="WebView;WebXAFLog;WebOther" Visibility="Hide" Criteria="[WebView] Is Null" AppearanceItemType="LayoutItem" IsNewNode="True" />
+        <AppearanceRule Id="Hide Win Tabs" TargetItems="WinView;WinXAFLog;WinOther" Visibility="Hide" Criteria="[WinView] Is Null" AppearanceItemType="LayoutItem" IsNewNode="True" />
+      </AppearanceRules>
+    </Class>
     <Class Name="XpandTestExecutor.Module.BusinessObjects.ExecutionInfo">
       <AppearanceRules>
         <AppearanceRule Id="Failed Color" FontColor="Red" TargetItems="*" Criteria="[Failed] = True" IsNewNode="True" />
@@ -36,7 +42,34 @@
         </LayoutGroup>
       </Layout>
     </DashboardView>
-    <ListView Id="EasyTest_EasyTestExecutionInfos_ListView" Criteria="[ExecutionInfo.Sequence] = CurrentSequence()" />
+    <DetailView Id="EasyTest_DetailView">
+      <Layout>
+        <LayoutGroup Id="Main" RelativeSize="100">
+          <LayoutGroup Id="SizeableEditors" Direction="Vertical" RelativeSize="100" Caption="File Name" Index="0">
+            <LayoutItem Id="EasyTestExecutionInfos" ViewItem="EasyTestExecutionInfos" SizeConstraintsType="Default" Index="0" RelativeSize="100" ShowCaption="False" IsNewNode="True" />
+            <LayoutItem Id="FileName" SizeConstraintsType="Default" Index="1" RelativeSize="79.184247538677923" ViewItem="FileName" Removed="True" />
+          </LayoutGroup>
+          <LayoutGroup Id="EasyTestExecutionInfos_Group" RelativeSize="90.379403794037941" Removed="True">
+            <LayoutItem Id="EasyTestExecutionInfos" ViewItem="EasyTestExecutionInfos" Removed="True" />
+          </LayoutGroup>
+          <LayoutGroup Id="SimpleEditors" RelativeSize="5.1490514905149052" Direction="Horizontal" Removed="True">
+            <LayoutGroup Id="EasyTest" Removed="True" />
+          </LayoutGroup>
+        </LayoutGroup>
+      </Layout>
+    </DetailView>
+    <ListView Id="EasyTest_EasyTestExecutionInfos_ListView" Criteria="[ExecutionInfo.Sequence] = CurrentSequence()" MasterDetailMode="ListViewAndDetailView">
+      <Columns>
+        <ColumnInfo Id="Duration" Index="-1" />
+        <ColumnInfo Id="ExecutionInfo" Index="-1" />
+        <ColumnInfo Id="WebPort" Index="-1" />
+        <ColumnInfo Id="WebView" Index="-1" />
+        <ColumnInfo Id="WinPort" Index="-1" />
+        <ColumnInfo Id="WinView" Index="-1" />
+        <ColumnInfo Id="State" Index="0" />
+        <ColumnInfo Id="WindowsUser" Index="1" />
+      </Columns>
+    </ListView>
     <ListView Id="EasyTest_ListView" MasterDetailMode="ListViewAndDetailView" IsGroupPanelVisible="False" AutoExpandAllGroups="True">
       <Columns>
         <ColumnInfo Id="Name" Index="0" />
@@ -48,6 +81,48 @@
         <Filter Id="Failed" Criteria="[Failed] = True" IsNewNode="True" />
       </Filters>
     </ListView>
+    <DetailView Id="EasyTestExecutionInfo_DetailView">
+      <Layout>
+        <LayoutGroup Id="Main" RelativeSize="100">
+          <TabbedGroup Id="Item1" CaptionLocation="Right" Index="0" RelativeSize="100" IsNewNode="True">
+            <LayoutGroup Id="TestsLog" ShowCaption="True" CaptionLocation="Top" Direction="Vertical" Index="0" RelativeSize="100" Caption="TestsLog" IsNewNode="True">
+              <LayoutItem Id="TestsLog" ShowCaption="False" ViewItem="TestsLog" SizeConstraintsType="Default" Index="0" RelativeSize="100" IsNewNode="True" />
+            </LayoutGroup>
+            <LayoutGroup Id="WinView" ShowCaption="True" CaptionLocation="Left" Direction="Vertical" Index="1" RelativeSize="100" Caption="WinView" IsNewNode="True">
+              <LayoutGroup Id="Auto930fb6c8-046d-4a1a-9591-448974400956" ShowCaption="False" Caption="Auto930fb6c8-046d-4a1a-9591-448974400956(5)" Direction="Vertical" Index="0" RelativeSize="100" IsNewNode="True">
+                <LayoutItem Id="WinView" ViewItem="WinView" CaptionLocation="Top" SizeConstraintsType="Default" Index="0" RelativeSize="100" ShowCaption="False" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="WinXAFLog" ShowCaption="True" CaptionLocation="Top" Direction="Vertical" Index="2" RelativeSize="100" Caption="WinXAFLog" IsNewNode="True">
+              <LayoutItem Id="WinLog" ViewItem="WinLog" SizeConstraintsType="Default" Index="0" RelativeSize="100" CaptionLocation="Top" ShowCaption="False" IsNewNode="True" />
+            </LayoutGroup>
+            <LayoutGroup Id="WinOther" ShowCaption="True" CaptionLocation="Top" Direction="Vertical" Index="3" RelativeSize="100" Caption="WinOther" IsNewNode="True">
+              <LayoutItem Id="WinPort" ViewItem="WinPort" SizeConstraintsType="Default" Index="0" RelativeSize="100" IsNewNode="True" />
+            </LayoutGroup>
+            <LayoutGroup Id="WebView" ShowCaption="True" CaptionLocation="Top" Direction="Vertical" Index="4" RelativeSize="100" Caption="WebView" IsNewNode="True">
+              <LayoutItem Id="WebView" ViewItem="WebView" CaptionLocation="Top" SizeConstraintsType="Default" Index="0" RelativeSize="100" ShowCaption="False" IsNewNode="True" />
+            </LayoutGroup>
+            <LayoutGroup Id="WebXAFLog" ShowCaption="True" CaptionLocation="Top" Direction="Vertical" Index="5" RelativeSize="100" Caption="WebXAFLog" IsNewNode="True">
+              <LayoutItem Id="WebLog" ViewItem="WebLog" CaptionLocation="Top" SizeConstraintsType="Default" Index="0" RelativeSize="100" ShowCaption="False" IsNewNode="True" />
+            </LayoutGroup>
+            <LayoutGroup Id="WebOther" ShowCaption="True" CaptionLocation="Bottom" Direction="Vertical" Index="6" RelativeSize="100" Caption="Other" IsNewNode="True">
+              <LayoutItem Id="WebPort" ViewItem="WebPort" SizeConstraintsType="Default" Index="0" RelativeSize="100" IsNewNode="True" />
+            </LayoutGroup>
+            <LayoutGroup Id="EasyTestApplications_Group" ShowCaption="True" Caption="Easy Test Applications" Index="7" RelativeSize="100" IsNewNode="True">
+              <LayoutItem Id="EasyTestApplications" ViewItem="EasyTestApplications" SizeConstraintsType="Default" Index="0" RelativeSize="100" IsNewNode="True" />
+            </LayoutGroup>
+          </TabbedGroup>
+          <LayoutGroup Id="EasyTestApplications_Group" Removed="True" />
+          <LayoutGroup Id="SimpleEditors" RelativeSize="86.58536585365853" Direction="Horizontal" Removed="True">
+            <LayoutGroup Id="EasyTestExecutionInfo" Removed="True" />
+          </LayoutGroup>
+          <LayoutGroup Id="SizeableEditors" RelativeSize="66.124661246612462" Caption="SizeableEditors" Direction="Horizontal" Removed="True">
+            <LayoutItem Id="WebLog" ViewItem="WebLog" Removed="True" />
+            <LayoutItem Id="WinLog" ViewItem="WinLog" Removed="True" />
+          </LayoutGroup>
+        </LayoutGroup>
+      </Layout>
+    </DetailView>
     <ListView Id="ExecutionInfo_ListView">
       <Columns>
         <ColumnInfo Id="Sequence" SortOrder="Descending" />

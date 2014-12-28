@@ -132,6 +132,9 @@
     <Compile Include="BusinessObjects\EasyTestApplication.cs" />
     <Compile Include="BusinessObjects\EasyTestExecutionInfo.cs" />
     <Compile Include="BusinessObjects\ExecutionInfo.cs" />
+    <Compile Include="Controllers\BrowseEasyTestFolderController.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Controllers\EasyTestDashBoardController.cs">
       <SubType>Component</SubType>
     </Compile>

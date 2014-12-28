@@ -22,7 +22,7 @@ namespace XpandTestExecutor.Module {
 
         public static XPCollection<EasyTestExecutionInfo> Failed(this XPCollection<EasyTestExecutionInfo> collection) {
             var failedEasyTests = collection.GroupBy(info => info.EasyTest).Where(infos
-                    => infos.All(info => info.State == EasyTestExecutionInfoState.Failed)).Select(infos => infos.Key);
+                    => infos.All(info => info.State == EasyTestState.Failed)).Select(infos => infos.Key);
             return new XPCollection<EasyTestExecutionInfo>(collection.Session,
                 collection.Where(info => failedEasyTests.Contains(info.EasyTest)));
         }

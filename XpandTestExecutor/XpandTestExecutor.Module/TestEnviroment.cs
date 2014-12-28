@@ -75,7 +75,12 @@ namespace XpandTestExecutor.Module {
 
         }
 
-
-
+        public static void Setup(EasyTestExecutionInfo info) {
+            string configPath = Path.GetDirectoryName(info.EasyTest.FileName) + "";
+            string fileName = Path.Combine(configPath, "config.xml");
+            TestUpdater.UpdateTestConfig(info, fileName);
+            AppConfigUpdater.Update(fileName, configPath, info);
+            TestUpdater.UpdateTestFile(info);
+        }
     }
 }

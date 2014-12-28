@@ -10,11 +10,11 @@ using XpandTestExecutor.Module.BusinessObjects;
 
 namespace XpandTestExecutor.Module {
     public class TestUpdater {
-        public static void UpdateTestConfig(EasyTest easyTest, string fileName) {
-            var user = easyTest.LastEasyTestExecutionInfo.WindowsUser;
+        public static void UpdateTestConfig(EasyTestExecutionInfo easyTestExecutionInfo, string fileName) {
+            var user = easyTestExecutionInfo.WindowsUser;
             var xmlSerializer = new XmlSerializer(typeof(Options));
             var options = (Options)xmlSerializer.Deserialize(new StringReader(File.ReadAllText(fileName)));
-            UpdatePort(easyTest, options);
+            UpdatePort(easyTestExecutionInfo, options);
             UpdateAppBinAlias(user, options);
             UpdateDataBases(user, options);
             using (var writer = new StreamWriter(fileName))
@@ -28,17 +28,17 @@ namespace XpandTestExecutor.Module {
             }
         }
 
-        private static void UpdatePort(EasyTest easyTest, Options options) {
+        private static void UpdatePort(EasyTestExecutionInfo easyTestExecutionInfo, Options options) {
             foreach (var application in options.Applications.Cast<TestApplication>()) {
                 var additionalAttribute =
                     application.AdditionalAttributes.FirstOrDefault(
                         attribute => attribute.LocalName.ToLowerInvariant() == "communicationport");
                 if (additionalAttribute != null)
-                    additionalAttribute.Value = easyTest.LastEasyTestExecutionInfo.WinPort.ToString(CultureInfo.InvariantCulture);
+                    additionalAttribute.Value = easyTestExecutionInfo.WinPort.ToString(CultureInfo.InvariantCulture);
                 else {
                     additionalAttribute =
                         application.AdditionalAttributes.First(attribute => attribute.LocalName.ToLowerInvariant() == "url");
-                    additionalAttribute.Value = "http://localhost:" + easyTest.LastEasyTestExecutionInfo.WebPort;
+                    additionalAttribute.Value = "http://localhost:" + easyTestExecutionInfo.WebPort;
                 }
             }
         }
@@ -52,13 +52,13 @@ namespace XpandTestExecutor.Module {
             File.WriteAllText(fileName, allText);
         }
 
-        public static void UpdateTestFile(EasyTest easyTest) {
+        public static void UpdateTestFile(EasyTestExecutionInfo easyTestExecutionInfo) {
             var xmlSerializer = new XmlSerializer(typeof(Options));
-            var stringReader = new StringReader(File.ReadAllText(Path.Combine(Path.GetDirectoryName(easyTest.FileName) + "", "config.xml")));
+            var stringReader = new StringReader(File.ReadAllText(Path.Combine(Path.GetDirectoryName(easyTestExecutionInfo.EasyTest.FileName) + "", "config.xml")));
             var options = (Options)xmlSerializer.Deserialize(stringReader);
-            var windowsUser = easyTest.LastEasyTestExecutionInfo.WindowsUser;
-            UpdateTestFileCore(easyTest.FileName, windowsUser, options);
-            foreach (var includedFile in IncludedFiles(easyTest.FileName)) {
+            var windowsUser = easyTestExecutionInfo.WindowsUser;
+            UpdateTestFileCore(easyTestExecutionInfo.EasyTest.FileName, windowsUser, options);
+            foreach (var includedFile in IncludedFiles(easyTestExecutionInfo.EasyTest.FileName)) {
                 UpdateTestFileCore(includedFile, windowsUser, options);
             }
         }

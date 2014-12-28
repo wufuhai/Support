@@ -10,28 +10,28 @@ using XpandTestExecutor.Module.BusinessObjects;
 namespace XpandTestExecutor.Module {
     public class AppConfigUpdater {
 
-        public static void Update(string fileName, string configPath, EasyTest easyTest) {
+        public static void Update(string fileName, string configPath, EasyTestExecutionInfo easyTestExecutionInfo) {
             using (var optionsStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)) {
                 Options options = Options.LoadOptions(optionsStream, null, null, configPath);
-                UpdateAppConfigFiles(easyTest, options);
+                UpdateAppConfigFiles(easyTestExecutionInfo, options);
             }
         }
-        private static void UpdateAppConfigFiles(EasyTest easyTest, Options options) {
-            var user = easyTest.LastEasyTestExecutionInfo.WindowsUser;
+        private static void UpdateAppConfigFiles(EasyTestExecutionInfo easyTestExecutionInfo, Options options) {
+            var user = easyTestExecutionInfo.WindowsUser;
             if (user.Name != null) {
                 foreach (var alias in options.Aliases.Cast<TestAlias>().Where(@alias => alias.ContainsAppPath())) {
                     var sourcePath = Path.GetFullPath(alias.UpdateAppPath(null));
                     if (Directory.Exists(sourcePath)) {
                         var destPath = Path.GetFullPath(alias.UpdateAppPath(user.Name));
                         DirectoryCopy(sourcePath, destPath, true, sourcePath + @"\" + TestRunner.EasyTestUsersDir);
-                        UpdateAppConfig(easyTest, options, alias, user);
+                        UpdateAppConfig(easyTestExecutionInfo, options, alias, user);
                     }
                 }
             }
-            UpdateAdditionalApps(easyTest, options, user);
+            UpdateAdditionalApps(easyTestExecutionInfo, options, user);
         }
 
-        public static void UpdateAdditionalApps(EasyTest easyTest, Options options, WindowsUser windowsUser) {
+        public static void UpdateAdditionalApps(EasyTestExecutionInfo easyTestExecutionInfo, Options options, WindowsUser windowsUser) {
             var additionalApps = options.Applications.Cast<TestApplication>()
                     .SelectMany(application => application.AdditionalAttributes)
                     .Where(attribute => attribute.LocalName == "AdditionalApplications")
@@ -39,7 +39,7 @@ namespace XpandTestExecutor.Module {
             foreach (var additionalApp in additionalApps) {
                 var path = Path.Combine(Path.GetDirectoryName(additionalApp) + "", Path.GetFileName(additionalApp) + ".config");
                 var document = XDocument.Load(path);
-                UpdateAppConfigCore(easyTest, options, windowsUser, document);
+                UpdateAppConfigCore(easyTestExecutionInfo, options, windowsUser, document);
                 document.Save(path);
             }
         }
@@ -114,17 +114,17 @@ namespace XpandTestExecutor.Module {
             return new KeyValuePair<XDocument, string>();
         }
 
-        private static void UpdateAppConfig(EasyTest easyTest, Options options, TestAlias alias, WindowsUser windowsUser) {
+        private static void UpdateAppConfig(EasyTestExecutionInfo easyTestExecutionInfo, Options options, TestAlias alias, WindowsUser windowsUser) {
             var keyValuePair = LoadAppConfig(alias, options.Applications);
             if (File.Exists(keyValuePair.Value)) {
                 var document = keyValuePair.Key;
-                UpdateAppConfigCore(easyTest, options, windowsUser, document);
+                UpdateAppConfigCore(easyTestExecutionInfo, options, windowsUser, document);
                 document.Save(keyValuePair.Value);
             }
         }
 
-        private static void UpdateAppConfigCore(EasyTest easyTest, Options options, WindowsUser windowsUser, XDocument document) {
-            UpdatePort(easyTest.LastEasyTestExecutionInfo.WinPort, document);
+        private static void UpdateAppConfigCore(EasyTestExecutionInfo easyTestExecutionInfo, Options options, WindowsUser windowsUser, XDocument document) {
+            UpdatePort(easyTestExecutionInfo.WinPort, document);
             UpdateConnectionStrings(windowsUser, options, document);
         }
     }
