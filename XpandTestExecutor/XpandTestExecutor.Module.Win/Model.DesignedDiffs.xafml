@@ -11,16 +11,9 @@
         <PropertyEditor Id="TestsLog" PropertyEditorType="Xpand.ExpressApp.Win.PropertyEditors.RichEdit.RichEditWinPropertyEditor">
           <RichEdit HighLightExtension="xml" ControlBindingProperty="ControlText" ShowToolBars="False" />
         </PropertyEditor>
-        <PropertyEditor Id="WebLog" PropertyEditorType="DevExpress.ExpressApp.HtmlPropertyEditor.Win.HtmlPropertyEditor" />
-        <PropertyEditor Id="WinLog" PropertyEditorType="DevExpress.ExpressApp.HtmlPropertyEditor.Win.HtmlPropertyEditor" />
       </Items>
     </DetailView>
     <ListView Id="ExecutionInfo_ListView">
-      <Columns>
-        <ColumnInfo Id="Duration">
-          <DurationSettings DisplayTotal="Minutes" />
-        </ColumnInfo>
-      </Columns>
     </ListView>
   </Views>
 </Application>

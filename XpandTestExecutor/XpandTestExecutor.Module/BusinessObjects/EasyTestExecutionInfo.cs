@@ -15,50 +15,49 @@ using Xpand.Persistent.Base.General.CustomAttributes;
 
 namespace XpandTestExecutor.Module.BusinessObjects {
     [DefaultClassOptions]
+    [DefaultProperty("Sequence")]
     public class EasyTestExecutionInfo : BaseObject, ISupportSequenceObject {
-        private string _testsLog;
+        private WindowsUser _windowsUser;
         private EasyTest _easyTest;
-        private TimeSpan _end;
-        private TimeSpan _start;
+        private DateTime _end;
+        private DateTime _start;
         private EasyTestState _state;
-        private string _webLog;
         private int _webPort;
-        private Image _webView;
-        private string _winLog;
         private int _winPort;
-        private Image _winView;
 
         public EasyTestExecutionInfo(Session session)
             : base(session) {
         }
-        [Size(SizeAttribute.Unlimited)]
+        [Size(SizeAttribute.Unlimited), Delayed]
         public string TestsLog {
-            get { return _testsLog; }
-            set { SetPropertyValue("TestsLog", ref _testsLog, value); }
+            get { return GetDelayedPropertyValue<string>("TestsLog"); }
+            set { SetDelayedPropertyValue("TestsLog", value); }
         }
 
-        [Size(SizeAttribute.Unlimited)]
+        [Size(SizeAttribute.Unlimited), Delayed]
         public string WinLog {
-            get { return _winLog; }
-            set { SetPropertyValue("WinLog", ref _winLog, value); }
+            get { return GetDelayedPropertyValue<string>("WinLog"); }
+            set { SetDelayedPropertyValue("WinLog", value); }
         }
 
-        [Size(SizeAttribute.Unlimited)]
+        [Size(SizeAttribute.Unlimited), Delayed]
         public string WebLog {
-            get { return _webLog; }
-            set { SetPropertyValue("WebLog", ref _webLog, value); }
+            get { return GetDelayedPropertyValue<string>("WebLog"); }
+            set { SetDelayedPropertyValue("WebLog", value); }
         }
 
-        [ValueConverter(typeof (ImageValueConverter))]
+        [ValueConverter(typeof(ImageValueConverter))]
+        [Delayed]
         public Image WebView {
-            get { return _webView; }
-            set { SetPropertyValue("WebView", ref _webView, value); }
+            get { return GetDelayedPropertyValue<Image>("WebView"); }
+            set { SetDelayedPropertyValue("WebView", value); }
         }
 
-        [ValueConverter(typeof (ImageValueConverter))]
+        [ValueConverter(typeof(ImageValueConverter))]
+        [Delayed]
         public Image WinView {
-            get { return _winView; }
-            set { SetPropertyValue("WinView", ref _winView, value); }
+            get { return GetDelayedPropertyValue<Image>("WinView"); }
+            set { SetDelayedPropertyValue("WinView", value); }
         }
 
         public int WinPort {
@@ -89,13 +88,13 @@ namespace XpandTestExecutor.Module.BusinessObjects {
             get { return (int)End.Subtract(Start).TotalMinutes; }
         }
         [InvisibleInAllViews]
-        public TimeSpan End {
+        public DateTime End {
             get { return _end; }
             set { SetPropertyValue("End", ref _end, value); }
         }
 
         [InvisibleInAllViews]
-        public TimeSpan Start {
+        public DateTime Start {
             get { return _start; }
             set { SetPropertyValue("Start", ref _start, value); }
         }
@@ -105,14 +104,17 @@ namespace XpandTestExecutor.Module.BusinessObjects {
             set { SetPropertyValue("State", ref _state, value); }
         }
 
-        [RuleRequiredField]
-        public WindowsUser WindowsUser { get; set; }
+        [RuleRequiredField(TargetCriteria = "State='Running'")]
+        public WindowsUser WindowsUser {
+            get { return _windowsUser; }
+            set { SetPropertyValue("WindowsUser", ref _windowsUser, value); }
+        }
 
-        [Browsable(false)]
+        [InvisibleInAllViews]
         public long Sequence { get; set; }
 
         string ISupportSequenceObject.Prefix {
-            get { return ((ISupportSequenceObject) EasyTest).Sequence.ToString(CultureInfo.InvariantCulture); }
+            get { return ((ISupportSequenceObject)EasyTest).Sequence.ToString(CultureInfo.InvariantCulture); }
         }
 
         public void SetView(bool win, Image view) {
@@ -137,7 +139,7 @@ namespace XpandTestExecutor.Module.BusinessObjects {
                     EasyTestApplications.Add(
                         new XPQuery<EasyTestApplication>(Session).FirstOrDefault(
                             testApplication => testApplication.Name == application.Name) ??
-                        new EasyTestApplication(Session) {Name = application.Name});
+                        new EasyTestApplication(Session) { Name = application.Name });
                 }
             }
         }
@@ -153,15 +155,15 @@ namespace XpandTestExecutor.Module.BusinessObjects {
         public void Update(EasyTestState easyTestState) {
             State = easyTestState;
             if (State == EasyTestState.Running) {
-                Start = DateTime.Now.TimeOfDay;
-                if (!ExecutionInfo.EasyTestExecutionInfos.Any(info =>new []{EasyTestState.Failed,EasyTestState.Passed, EasyTestState.Running}.Contains(info.State)))
-                    ExecutionInfo.Start=DateTime.Now.TimeOfDay;
+                Start = DateTime.Now;
             }
             else if (State == EasyTestState.Passed || State == EasyTestState.Failed)
-                End = DateTime.Now.TimeOfDay;
+                End = DateTime.Now;
+
+            var path = Path.GetDirectoryName(EasyTest.FileName) + "";
             if (State == EasyTestState.Failed) {
-                var path = Path.GetDirectoryName(EasyTest.FileName) + "";
                 var logTests = EasyTest.GetFailedLogTests();
+
                 foreach (var platform in new[] { "Win", "Web" }) {
                     var logTest = logTests.FirstOrDefault(test => test.ApplicationName.Contains("." + platform));
                     if (logTest != null) {
@@ -182,7 +184,7 @@ namespace XpandTestExecutor.Module.BusinessObjects {
     public enum EasyTestState {
         NotStarted,
         Running,
-        Passed,
-        Failed
+        Failed,
+        Passed
     }
 }

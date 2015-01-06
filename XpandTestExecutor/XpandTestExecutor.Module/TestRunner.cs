@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,7 @@ using DevExpress.ExpressApp.Xpo;
 using DevExpress.Persistent.Base;
 using DevExpress.Xpo;
 using Xpand.Persistent.Base.General;
+using Xpand.Utils.Threading;
 using XpandTestExecutor.Module.BusinessObjects;
 
 namespace XpandTestExecutor.Module {
@@ -20,29 +22,29 @@ namespace XpandTestExecutor.Module {
         private static bool ExecutionFinished(IDataLayer dataLayer, Guid executionInfoKey, int testsCount) {
             using (var unitOfWork = new UnitOfWork(dataLayer)) {
                 var executionInfo = unitOfWork.GetObjectByKey<ExecutionInfo>(executionInfoKey, true);
-                return executionInfo.EasyTestExecutionInfos.Count() >= testsCount && executionInfo.FinishedEasyTestExecutionInfos() == testsCount;
+                return executionInfo.FinishedEasyTestExecutionInfos() == testsCount;
             }
         }
 
         private static void RunTest(Guid easyTestKey, IDataLayer dataLayer, bool isSystem) {
             Process process = null;
-            lock (Locker)
-            {
+            lock (Locker) {
                 using (var unitOfWork = new UnitOfWork(dataLayer)) {
-                    var easyTest = unitOfWork.GetObjectByKey<EasyTest>(easyTestKey,true);
+                    var easyTest = unitOfWork.GetObjectByKey<EasyTest>(easyTestKey, true);
                     try {
-                        var easyTestExecutionInfo = easyTest.LastEasyTestExecutionInfo;
-                        var user = easyTestExecutionInfo.WindowsUser;
-                        Tracing.Tracer.LogText(user.Name + " WinPort:" + easyTestExecutionInfo.WinPort + " WebPort:" + easyTestExecutionInfo.WebPort + " -->" + easyTest.FileName);
+                        var lastEasyTestExecutionInfo = easyTest.LastEasyTestExecutionInfo;
+                        var user = lastEasyTestExecutionInfo.WindowsUser;
                         SetupEnviroment(easyTest);
                         var processStartInfo = GetProcessStartInfo(easyTest, user, isSystem);
-                        
+
                         process = new Process {
                             StartInfo = processStartInfo
                         };
                         process.Start();
-                        easyTest.LastEasyTestExecutionInfo.Update(EasyTestState.Running);
-                        easyTest.Session.ValidateAndCommitChanges();
+                        lastEasyTestExecutionInfo = unitOfWork.GetObjectByKey<EasyTestExecutionInfo>(lastEasyTestExecutionInfo.Oid, true);
+                        lastEasyTestExecutionInfo.Update(EasyTestState.Running);
+                        unitOfWork.ValidateAndCommitChanges();
+
                         Thread.Sleep(5000);
                     }
                     catch (Exception e) {
@@ -50,10 +52,9 @@ namespace XpandTestExecutor.Module {
                     }
                 }
             }
-            if (process != null)
-            {
+            if (process != null) {
                 process.WaitForExit();
-                AfterProcessExecute(dataLayer,easyTestKey);
+                AfterProcessExecute(dataLayer, easyTestKey);
             }
         }
 
@@ -77,12 +78,12 @@ namespace XpandTestExecutor.Module {
             }
             Tracing.Tracer.LogError(e);
         }
-        private static ProcessStartInfo GetProcessStartInfo(EasyTest easyTest, WindowsUser user, bool isSystem){
-            string testExecutor=string.Format("TestExecutor.v{0}.exe",AssemblyInfo.VersionShort);
+        private static ProcessStartInfo GetProcessStartInfo(EasyTest easyTest, WindowsUser user, bool isSystem) {
+            string testExecutor = string.Format("TestExecutor.v{0}.exe", AssemblyInfo.VersionShort);
             var arguments = isSystem ? string.Format("-e " + testExecutor + " -u {0} -p {1} -a {2}", user.Name, user.Password, Path.GetFileName(easyTest.FileName)) : Path.GetFileName(easyTest.FileName);
             string directoryName = Path.GetDirectoryName(easyTest.FileName) + "";
-            var exe = isSystem?"ProcessAsUser.exe":testExecutor;
-            var processStartInfo = new ProcessStartInfo(Path.Combine(directoryName, exe), arguments){
+            var exe = isSystem ? "ProcessAsUser.exe" : testExecutor;
+            var processStartInfo = new ProcessStartInfo(Path.Combine(directoryName, exe), arguments) {
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -91,11 +92,10 @@ namespace XpandTestExecutor.Module {
             return processStartInfo;
         }
 
-        private static void AfterProcessExecute(IDataLayer dataLayer,Guid easyTestKey) {
+        private static void AfterProcessExecute(IDataLayer dataLayer, Guid easyTestKey) {
             lock (Locker) {
-                using (var unitOfWork = new UnitOfWork(dataLayer))
-                {
-                    var easyTest = unitOfWork.GetObjectByKey<EasyTest>(easyTestKey,true);
+                using (var unitOfWork = new UnitOfWork(dataLayer)) {
+                    var easyTest = unitOfWork.GetObjectByKey<EasyTest>(easyTestKey, true);
                     var directoryName = Path.GetDirectoryName(easyTest.FileName) + "";
                     CopyXafLogs(directoryName);
                     var logTests = easyTest.GetFailedLogTests();
@@ -110,7 +110,6 @@ namespace XpandTestExecutor.Module {
                     }
                     easyTest.LastEasyTestExecutionInfo.Update(state);
                     easyTest.Session.ValidateAndCommitChanges();
-                    TestEnviroment.KillWebDev(easyTest.LastEasyTestExecutionInfo.WindowsUser.Name);
                 }
             }
         }
@@ -136,37 +135,50 @@ namespace XpandTestExecutor.Module {
         public static void Execute(string fileName, bool isSystem) {
             var fileNames = File.ReadAllLines(fileName).Where(s => !string.IsNullOrEmpty(s)).ToArray();
             var objectSpace = ApplicationHelper.Instance.Application.CreateObjectSpace();
-            var easyTests = EasyTest.GetTests(objectSpace,fileNames);
+            var easyTests = EasyTest.GetTests(objectSpace, fileNames);
             objectSpace.Session().ValidateAndCommitChanges();
-            Execute(easyTests,isSystem);
+            Execute(easyTests, isSystem, null);
         }
 
-        public static void Execute(EasyTest[] easyTests, bool isSystem) {
-            Tracing.Tracer.LogValue("EasyTests.Count",easyTests.Count());
-            if (easyTests.Any()){
+        public static CancellationTokenSource Execute(EasyTest[] easyTests, bool isSystem, Action<Task> finished) {
+            Tracing.Tracer.LogValue("EasyTests.Count", easyTests.Count());
+            if (easyTests.Any()) {
                 var dataLayer = GetDatalayer();
-                var executionInfoKey = GetExecutionInfoKey(dataLayer, isSystem);
-                do{
-                    var easyTest = GetNextEasyTest(executionInfoKey, easyTests, dataLayer, isSystem);
-                    if (easyTest != null){
-                        Task.Factory.StartNew(() => RunTest(easyTest.Oid, dataLayer, isSystem));
-                    }
-                    Thread.Sleep(5000);
-
-                } while (!ExecutionFinished(dataLayer, executionInfoKey, easyTests.Length));
+                var tokenSource = new CancellationTokenSource();
+                Task.Factory.StartNew(() => ExecuteCore(easyTests, isSystem, dataLayer, tokenSource.Token), tokenSource.Token).ContinueWith(task => finished, tokenSource.Token);
+                return tokenSource;
             }
+            return null;
         }
 
-        private static IDataLayer GetDatalayer(){
-            var xpObjectSpaceProvider =new XPObjectSpaceProvider(new ConnectionStringDataStoreProvider(ApplicationHelper.Instance.Application.ConnectionString), true);
+        private static void ExecuteCore(EasyTest[] easyTests, bool isSystem, IDataLayer dataLayer, CancellationToken token) {
+            var executionInfoKey = CreateExecutionInfoKey(dataLayer, isSystem, easyTests);
+            do {
+                if (token.IsCancellationRequested)
+                    return;
+                var easyTest = GetNextEasyTest(executionInfoKey, easyTests, dataLayer, isSystem);
+                if (easyTest != null) {
+                    Task.Factory.StartNew(() => RunTest(easyTest.Oid, dataLayer, isSystem), token).TimeoutAfter(1000 * 60 * 60);
+                }
+                Thread.Sleep(10000);
+            } while (!ExecutionFinished(dataLayer, executionInfoKey, easyTests.Length));
+        }
+
+        private static IDataLayer GetDatalayer() {
+            var xpObjectSpaceProvider = new XPObjectSpaceProvider(new ConnectionStringDataStoreProvider(ApplicationHelper.Instance.Application.ConnectionString), true);
             return xpObjectSpaceProvider.CreateObjectSpace().Session().DataLayer;
         }
 
-        private static Guid GetExecutionInfoKey(IDataLayer dataLayer, bool isSystem) {
+        private static Guid CreateExecutionInfoKey(IDataLayer dataLayer, bool isSystem, EasyTest[] easyTests) {
             Guid executionInfoKey;
             using (var unitOfWork = new UnitOfWork(dataLayer)) {
-                var executionInfo = ExecutionInfo.Create(unitOfWork,isSystem);
+                var executionInfo = ExecutionInfo.Create(unitOfWork, isSystem);
+                easyTests = easyTests.Select(test => unitOfWork.GetObjectByKey<EasyTest>(test.Oid)).ToArray();
+                foreach (var easyTest in easyTests) {
+                    easyTest.CreateExecutionInfo(isSystem, executionInfo);
+                }
                 unitOfWork.ValidateAndCommitChanges();
+                CurrentSequenceOperator.CurrentSequence = executionInfo.Sequence;
                 executionInfoKey = executionInfo.Oid;
             }
             return executionInfoKey;
@@ -176,31 +188,40 @@ namespace XpandTestExecutor.Module {
             using (var unitOfWork = new UnitOfWork(dataLayer)) {
                 var executionInfo = unitOfWork.GetObjectByKey<ExecutionInfo>(executionInfoKey);
                 easyTests = easyTests.Select(test => unitOfWork.GetObjectByKey<EasyTest>(test.Oid)).ToArray();
-                if (executionInfo.EasyTestExecutingInfos.Count() < executionInfo.WindowsUsers.Count()) {
+
+                var runningInfosCount = executionInfo.EasyTestRunningInfos.Count();
+                if (runningInfosCount < executionInfo.WindowsUsers.Count()) {
+                    var neverRunTest = GetEasyTest(easyTests, executionInfo, 0);
+                    if (neverRunTest != null) {
+                        var windowsUser = executionInfo.GetNextUser(neverRunTest);
+                        if (windowsUser != null) {
+                            neverRunTest.LastEasyTestExecutionInfo.WindowsUser = windowsUser;
+                            neverRunTest.Session.ValidateAndCommitChanges();
+                            return neverRunTest;
+                        }
+                        return null;
+                    }
                     for (int i = 0; i < ((IModelOptionsTestExecutor)CaptionHelper.ApplicationModel.Options).ExecutionRetries; i++) {
-                        var easyTest = executionInfo.GetTestsToExecute(i).FirstOrDefault(test => easyTests.Contains(test));
+                        var easyTest = GetEasyTest(easyTests, executionInfo, i + 1);
                         if (easyTest != null) {
-                            return CreateExecutionInfo(easyTest, executionInfo, isSystem);
+                            var windowsUser = executionInfo.GetNextUser(easyTest);
+                            if (windowsUser != null) {
+                                easyTest.CreateExecutionInfo(isSystem, executionInfo, windowsUser);
+                                easyTest.Session.ValidateAndCommitChanges();
+                                return easyTest;
+                            }
+                            return null;
                         }
                     }
-
                 }
             }
             return null;
         }
 
-        private static EasyTest CreateExecutionInfo(EasyTest easyTest, ExecutionInfo executionInfo, bool isSystem) {
-            var lastWindowsUser = easyTest.LastEasyTestExecutionInfo != null ? easyTest.LastEasyTestExecutionInfo.WindowsUser : null;
-            var windowsUser = executionInfo.GetIdleUsers().Except(new[] { lastWindowsUser }).FirstOrDefault() ?? lastWindowsUser;
-            if (windowsUser!=null){
-                easyTest.CreateExecutionInfo(isSystem, executionInfo);
-                var easyTestExecutionInfo = easyTest.LastEasyTestExecutionInfo;
-                easyTestExecutionInfo.WindowsUser = windowsUser;
-                easyTest.Session.ValidateAndCommitChanges();
-                return easyTest;
-            }
-            return null;
+        private static EasyTest GetEasyTest(IEnumerable<EasyTest> easyTests, ExecutionInfo executionInfo, int i) {
+            return executionInfo.GetTestsToExecute(i).FirstOrDefault(easyTests.Contains);
         }
+
 
     }
 }

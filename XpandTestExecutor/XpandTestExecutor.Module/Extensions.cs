@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using DevExpress.EasyTest.Framework;
@@ -22,13 +23,23 @@ namespace XpandTestExecutor.Module {
 
         public static XPCollection<EasyTestExecutionInfo> Failed(this XPCollection<EasyTestExecutionInfo> collection) {
             var failedEasyTests = collection.GroupBy(info => info.EasyTest).Where(infos
-                    => infos.All(info => info.State == EasyTestState.Failed)).Select(infos => infos.Key);
-            return new XPCollection<EasyTestExecutionInfo>(collection.Session,
-                collection.Where(info => failedEasyTests.Contains(info.EasyTest)));
+                    => infos.All(info => info.State < EasyTestState.Passed)).Select(infos => infos.Key);
+            var failedInfos = collection.Where(info => failedEasyTests.Contains(info.EasyTest));
+            return new XPCollection<EasyTestExecutionInfo>(collection.Session, failedInfos);
         }
-        public static double Duration(this XPCollection<EasyTestExecutionInfo> collection) {
-            return collection.Aggregate(0d, (current, easyTestExecutionInfo) => current + easyTestExecutionInfo.Duration);
+
+        public static int Duration(this IEnumerable<EasyTestExecutionInfo> collection) {
+            var easyTestExecutionInfos = collection as EasyTestExecutionInfo[] ?? collection.ToArray();
+            if (easyTestExecutionInfos.Any()) {
+                var min = easyTestExecutionInfos.Min(info => info.Start);
+                if (min != DateTime.MinValue) {
+                    var max = easyTestExecutionInfos.Max(info => info.End);
+                    return (int)max.Subtract(min).TotalMinutes;
+                }
+            }
+            return 0;
         }
+
         public static string DefaultDBName(this TestDatabase testDatabase) {
             return Regex.Replace(testDatabase.DBName, "([^_]*)(.*)", "$1", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Multiline);
         }

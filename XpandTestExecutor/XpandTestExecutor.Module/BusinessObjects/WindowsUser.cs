@@ -28,17 +28,17 @@ namespace XpandTestExecutor.Module.BusinessObjects {
         public string Password { get; set; }
 
         public static IEnumerable<WindowsUser> CreateUsers(UnitOfWork unitOfWork, bool isSystem) {
-            if (isSystem){
+            if (isSystem) {
                 RegistryKey registryKey = Registry.LocalMachine.CreateSubKey(@"Software\Xpand\ProcessAsUser");
-                if (registryKey != null){
-                    var userNames = (string) registryKey.GetValue("UserName", "");
-                    if (!string.IsNullOrEmpty(userNames)){
+                if (registryKey != null) {
+                    var userNames = (string)registryKey.GetValue("UserName", "");
+                    if (!string.IsNullOrEmpty(userNames)) {
                         return CreateUser(registryKey, userNames, unitOfWork);
                     }
                 }
                 throw new NotImplementedException();
             }
-            return new[]{CreateUser(unitOfWork, null)};
+            return new[] { CreateUser(unitOfWork, null) };
         }
         private static IEnumerable<WindowsUser> CreateUser(RegistryKey registryKey, string userNames, UnitOfWork unitOfWork) {
             string[] passwords = ((string)registryKey.GetValue("Password")).Split(';');
@@ -52,7 +52,7 @@ namespace XpandTestExecutor.Module.BusinessObjects {
             unitOfWork.ValidateAndCommitChanges();
         }
 
-        private static WindowsUser CreateUser(UnitOfWork unitOfWork, string userName, string password=null){
+        private static WindowsUser CreateUser(UnitOfWork unitOfWork, string userName, string password = null) {
             var user = new XPQuery<WindowsUser>(unitOfWork).FirstOrDefault(windowsUser => windowsUser.Name == userName) ??
                        new WindowsUser(unitOfWork);
             user.Name = userName;

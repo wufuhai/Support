@@ -8,8 +8,8 @@
     </Class>
     <Class Name="XpandTestExecutor.Module.BusinessObjects.EasyTestExecutionInfo">
       <AppearanceRules>
-        <AppearanceRule Id="Hide Web Tabs" TargetItems="WebView;WebXAFLog;WebOther" Visibility="Hide" Criteria="[WebView] Is Null" AppearanceItemType="LayoutItem" IsNewNode="True" />
-        <AppearanceRule Id="Hide Win Tabs" TargetItems="WinView;WinXAFLog;WinOther" Visibility="Hide" Criteria="[WinView] Is Null" AppearanceItemType="LayoutItem" IsNewNode="True" />
+        <AppearanceRule Id="Hide Web Tabs" TargetItems="WebView;WebXAFLog;WebOther" Visibility="" Criteria="[WebView] Is Not Null" AppearanceItemType="LayoutItem" FontColor="Red" IsNewNode="True" />
+        <AppearanceRule Id="Hide Win Tabs" TargetItems="WinView;WinXAFLog;WinOther" Visibility="" Criteria="[WinView] Is Not Null" AppearanceItemType="LayoutItem" FontColor="Red" IsNewNode="True" />
       </AppearanceRules>
     </Class>
     <Class Name="XpandTestExecutor.Module.BusinessObjects.ExecutionInfo">
@@ -62,6 +62,7 @@
       <Columns>
         <ColumnInfo Id="Duration" Index="-1" />
         <ColumnInfo Id="ExecutionInfo" Index="-1" />
+        <ColumnInfo Id="Start" SortIndex="0" SortOrder="Ascending" />
         <ColumnInfo Id="WebPort" Index="-1" />
         <ColumnInfo Id="WebView" Index="-1" />
         <ColumnInfo Id="WinPort" Index="-1" />
