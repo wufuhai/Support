@@ -110,6 +110,7 @@ namespace XpandTestExecutor.Module {
                     }
                     easyTest.LastEasyTestExecutionInfo.Update(state);
                     easyTest.Session.ValidateAndCommitChanges();
+                    TestEnviroment.LogOffUser(easyTest.LastEasyTestExecutionInfo.WindowsUser.Name);
                 }
             }
         }
@@ -173,6 +174,8 @@ namespace XpandTestExecutor.Module {
             Guid executionInfoKey;
             using (var unitOfWork = new UnitOfWork(dataLayer)) {
                 var executionInfo = ExecutionInfo.Create(unitOfWork, isSystem);
+                if (isSystem)
+                    TestEnviroment.LogOffAllUsers(executionInfo.WindowsUsers.Select(user => user.Name).ToArray());
                 easyTests = easyTests.Select(test => unitOfWork.GetObjectByKey<EasyTest>(test.Oid)).ToArray();
                 foreach (var easyTest in easyTests) {
                     easyTest.CreateExecutionInfo(isSystem, executionInfo);
