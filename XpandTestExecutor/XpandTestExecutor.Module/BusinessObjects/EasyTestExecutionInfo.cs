@@ -137,7 +137,7 @@ namespace XpandTestExecutor.Module.BusinessObjects {
                 Options options = Options.LoadOptions(optionsStream, null, null, directory);
                 foreach (TestApplication application in options.Applications.Cast<TestApplication>()) {
                     EasyTestApplications.Add(
-                        new XPQuery<EasyTestApplication>(Session).FirstOrDefault(
+                        new XPQuery<EasyTestApplication>(Session,true).FirstOrDefault(
                             testApplication => testApplication.Name == application.Name) ??
                         new EasyTestApplication(Session) { Name = application.Name });
                 }
