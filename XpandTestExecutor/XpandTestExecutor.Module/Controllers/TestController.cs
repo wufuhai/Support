@@ -33,8 +33,8 @@ namespace XpandTestExecutor.Module.Controllers {
 
         private void RunTestActionOnExecute(object sender, SingleChoiceActionExecuteEventArgs e) {
             var isSystem = ReferenceEquals(e.SelectedChoiceActionItem.Data, AsSystem);
-            if (ReferenceEquals(e.SelectedChoiceActionItem.Data, CancelRun)) {
-                _cancellationTokenSource.Cancel();
+            if (ReferenceEquals(e.SelectedChoiceActionItem.Data, CancelRun)){
+                if (_cancellationTokenSource != null) _cancellationTokenSource.Cancel();
                 UpdateAction(true);
             }
             else if (ReferenceEquals(e.SelectedChoiceActionItem.ParentItem.Data, ItemSelected)) {
